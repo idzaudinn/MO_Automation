@@ -118,7 +118,29 @@
         }
 
         .instruction-box {
-            margin-top: 0;
+            background: #333;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            text-align: left;  /* Ensure all text aligns left */
+        }
+
+        .instruction-box h3 {
+            text-align: left;  /* Ensure header is also left-aligned */
+            margin-bottom: 15px;
+        }
+
+        .instruction-box ol {
+            color: #fff;
+            margin-left: 20px;
+            line-height: 1.0;
+            padding-left: 0;  /* Reduce default padding */
+            text-align: left;
+        }
+
+        .instruction-box li {
+            text-align: left;
+            margin-bottom: 8px;  /* Add some spacing between list items */
         }
 
         /* Update container style */
@@ -137,6 +159,25 @@
 
         .table-wrapper {
             margin-top: 20px;
+        }
+        
+        /* Add hyperlink styles */
+        a {
+            color: #66b3ff;  /* Light blue color */
+            text-decoration: none;  /* Removes underline */
+        }
+
+        a:hover {
+            color: #99ccff;  /* Slightly lighter blue on hover */
+            text-decoration: underline;  /* Adds underline on hover */
+        }
+
+        a:visited {
+            color: #66b3ff;  /* Keeps visited links the same color */
+        }
+
+        a:active {
+            color: #3399ff;  /* Slightly darker when clicked */
         }
     </style>
 </head>
@@ -168,13 +209,26 @@
             <!-- Lower Left Section - Instructions -->
             <div class="instruction-box">
                 <h3>Instructions</h3>
-                <ol style="color: #fff; margin-left: 20px; line-height: 1.6;">
+                <ol>
                     <li>Upload MT5 Report (HTML format)</li>
                     <li>Upload Metabase Report (CSV format)</li>
                     <li>Click "Analyze" to compare the data</li>
                     <li>Review the Summary for any discrepancies</li>
                     <li>Check Combined Commission Data for detailed comparison</li>
                 </ol>
+                <h3>MT5 Report</h3>
+                <ol>
+                    <li>Please fetch the MT5 report from the <a href="https://deriv-group.slack.com/archives/C03EAHR4P2L" target="_blank"><i>#sideoffice_mt5</i></a> channel</li>
+                    <li>Save the generated file</li>
+                    <li>Upload the MT5 report to the <i>Upload MT5 Report (HTML)</i> section</li>
+                </ol>
+                <h3>Metabase Report</h3>
+                <ol>
+                    <li>Please fetch the Metabase report from <a href="https://metabase-bi.4x.my/dashboard/1446-marketing-assistance-response-keyworker-dashboard?affiliate_id=266497&client_cr=&client_mt5_=&end_date=&ib_main_mt5=&start_date=&tab=272-ai-initiative-1" target="_blank"><i>Metabase Agent_MARK</i></a> channel</li>
+                    <li>Save the generated file as CSV</li>
+                    <li>Upload the Metabase report to the <i>Upload Metabase Report (CSV)</i> section</li>
+                </ol>
+                    
             </div>
         </div>
 
