@@ -15,16 +15,22 @@
         }
         h1 {
             text-align: left;
-            margin-left: 250px;
+            margin: 0 0 10px 0;  /* Remove left margin */
             font-size: 24px;
             color: #fff;
+            max-width: 1400px;  /* Match main-container max-width */
+            margin: 0 auto 10px;  /* Center the container but keep text left-aligned */
+            padding: 0 0 0 0;  /* Remove any padding */
         }
         h2 {
             text-align: left;
-            margin-left: 250px;
+            margin: 0 0 20px 0;  /* Remove left margin */
             font-size: 18px;
             font-weight: normal;
             color: #fff;
+            max-width: 1400px;  /* Match main-container max-width */
+            margin: 0 auto 20px;  /* Center the container but keep text left-aligned */
+            padding: 0 0 0 0;  /* Remove any padding */
         }
         .container {
             max-width: 900px;
@@ -106,6 +112,7 @@
             gap: 20px;
             max-width: 1400px;
             margin: auto;
+            margin-top: 20px;
         }
 
         .left-side {
@@ -228,7 +235,8 @@
 <body>
 
     <h1>Initiative 1.1: General Commissions Check</h1>
-    <h2>Use this tool to check the general commissions data between MT5, Metabase and to find the discrepancies based on the report dates</h2>
+    <h2>Use this tool to check the general commissions data between MT5, Metabase and to find the discrepancies based on the report dates. 
+        Please use the main affiliate report for the analysis</h2>
 
     <div class="main-container">
         <!-- Left Side (contains both upper and lower sections) -->
@@ -238,10 +246,10 @@
                 <!-- File Inputs -->
                 <div class="upload-section">
                     <h3>Upload Files</h3>
-                    <label for="mt5Report">Upload MT5 Report (HTML)</label>
+                    <label for="mt5Report">MT5 Report (HTML)</label>
                     <input type="file" id="mt5Report" accept=".html"> 
 
-                    <label for="metabaseReport">Upload Metabase Report (CSV)</label>
+                    <label for="metabaseReport">Metabase Report (CSV)</label>
                     <input type="file" id="metabaseReport" accept=".csv">
 
                     <div class="button-group">
@@ -431,6 +439,10 @@
             const mt5Total = window.mt5Total || 0;
             const metabaseTotal = window.metabaseTotal || 0;
 
+            // Check if either report is missing
+            const isMT5Missing = Object.keys(mt5Data).length === 0;
+            const isMetabaseMissing = Object.keys(metabaseData).length === 0;
+
             console.log('Updating table with:', { mt5Data, metabaseData }); // Debug log
 
             // Create combined set of dates
@@ -491,9 +503,24 @@
                 let discrepancyAmount = (mt5Total - metabaseTotal).toFixed(2);
                 let discrepancyColor = discrepancyAmount == 0 ? "#4CAF50" : "red";
                 
-                // Create message box for both cases
+                // Create message box based on conditions
                 let messageBox = '';
-                if (discrepancyAmount == 0) {
+                if (isMT5Missing || isMetabaseMissing) {
+                    messageBox = `
+                        <div style="
+                            width: 100%;
+                            margin-top: 10px;
+                            padding: 10px;
+                            background: #ffd700;
+                            color: black;
+                            text-align: center;
+                            border-radius: 4px;
+                            box-sizing: border-box;
+                        ">
+                            ${isMT5Missing ? "MT5 Report is missing" : "Metabase Report is missing"}
+                        </div>
+                    `;
+                } else if (discrepancyAmount == 0) {
                     messageBox = `
                         <div style="
                             width: 100%;
