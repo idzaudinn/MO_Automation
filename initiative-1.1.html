@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Initiative 1.1</title>
+    <title>Initiative 1.1: General Commissions Check</title>
     <style>
         /* Dark, professional theme */
         body {
@@ -14,7 +14,16 @@
             padding: 20px;
         }
         h1 {
-            text-align: center;
+            text-align: left;
+            margin-left: 250px;
+            font-size: 24px;
+            color: #fff;
+        }
+        h2 {
+            text-align: left;
+            margin-left: 250px;
+            font-size: 18px;
+            font-weight: normal;
             color: #fff;
         }
         .container {
@@ -179,11 +188,47 @@
         a:active {
             color: #3399ff;  /* Slightly darker when clicked */
         }
+
+        /* Add button styling */
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        #analyzeBtn {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        #resetBtn {
+            background-color: #ff4444;
+            color: white;
+        }
+
+        #analyzeBtn:hover {
+            background-color: #45a049;
+        }
+
+        #resetBtn:hover {
+            background-color: #ff0000;
+        }
     </style>
 </head>
 <body>
 
-    <h1>Initiative 1.1</h1>
+    <h1>Initiative 1.1: General Commissions Check</h1>
+    <h2>Use this tool to check the general commissions data between MT5, Metabase and to find the discrepancies based on the report dates</h2>
 
     <div class="main-container">
         <!-- Left Side (contains both upper and lower sections) -->
@@ -199,7 +244,10 @@
                     <label for="metabaseReport">Upload Metabase Report (CSV)</label>
                     <input type="file" id="metabaseReport" accept=".csv">
 
-                    <button onclick="analyzeData()">Analyze</button>
+                    <div class="button-group">
+                        <button id="analyzeBtn" onclick="analyzeData()">Analyze</button>
+                        <button id="resetBtn" onclick="resetFiles()">Reset</button>
+                    </div>
                 </div>
 
                 <!-- Summary Results -->
@@ -212,9 +260,8 @@
                 <ol>
                     <li>Upload MT5 Report (HTML format)</li>
                     <li>Upload Metabase Report (CSV format)</li>
-                    <li>Click "Analyze" to compare the data</li>
+                    <li>The results will be displayed in the right column</li>
                     <li>Review the Summary for any discrepancies</li>
-                    <li>Check Combined Commission Data for detailed comparison</li>
                 </ol>
                 <h3>MT5 Report</h3>
                 <ol>
@@ -237,7 +284,7 @@
             <!-- Combined Table -->
             <div class="tables-container">
                 <div class="table-wrapper">
-                    <h3>Combined Commission Data</h3>
+                    <h3>Combined Commissions Data</h3>
                     <table id="mt5Table"></table>
                     <table id="metabaseTable" style="display: none;"></table>
                 </div>
@@ -559,6 +606,25 @@
             ctx.fillStyle = "white";
             ctx.fillText(`MT5: ${totalMT5.toFixed(2)}`, 200, 295);
             ctx.fillText(`Metabase: ${metabaseTotal.toFixed(2)}`, 350, 295);
+        }
+
+        function resetFiles() {
+            // Clear file inputs
+            document.getElementById('mt5Report').value = '';
+            document.getElementById('metabaseReport').value = '';
+            
+            // Clear the tables
+            document.getElementById('mt5Table').innerHTML = '';
+            document.getElementById('metabaseTable').innerHTML = '';
+            
+            // Clear the summary results
+            document.getElementById('summaryResults').innerHTML = '';
+            
+            // Reset any global variables
+            window.mt5CommissionData = null;
+            window.metabaseCommissionData = null;
+            window.mt5Total = 0;
+            window.metabaseTotal = 0;
         }
     </script>
 
