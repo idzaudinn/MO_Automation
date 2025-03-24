@@ -99,19 +99,26 @@
             margin: auto;
         }
 
-        .left-column, .right-column {
+        .left-side {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex: 0 0 400px;  /* Fixed width of 400px */
+        }
+
+        .left-column, .right-column, .instruction-box {
             background: #333;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
         }
 
-        .left-column {
-            flex: 0 0 400px;  /* Fixed width of 400px */
-        }
-
         .right-column {
             flex: 1;  /* Takes remaining space */
+        }
+
+        .instruction-box {
+            margin-top: 0;
         }
 
         /* Update container style */
@@ -138,22 +145,37 @@
     <h1>Initiative 1.1</h1>
 
     <div class="main-container">
-        <!-- Left Column -->
-        <div class="left-column">
-            <!-- File Inputs -->
-            <div class="upload-section">
-                <h3>Upload Files</h3>
-                <label for="mt5Report">Upload MT5 Report (HTML)</label>
-                <input type="file" id="mt5Report" accept=".html"> 
+        <!-- Left Side (contains both upper and lower sections) -->
+        <div class="left-side">
+            <!-- Upper Left Section -->
+            <div class="left-column">
+                <!-- File Inputs -->
+                <div class="upload-section">
+                    <h3>Upload Files</h3>
+                    <label for="mt5Report">Upload MT5 Report (HTML)</label>
+                    <input type="file" id="mt5Report" accept=".html"> 
 
-                <label for="metabaseReport">Upload Metabase Report (CSV)</label>
-                <input type="file" id="metabaseReport" accept=".csv">
+                    <label for="metabaseReport">Upload Metabase Report (CSV)</label>
+                    <input type="file" id="metabaseReport" accept=".csv">
 
-                <button onclick="analyzeData()">Analyze</button>
+                    <button onclick="analyzeData()">Analyze</button>
+                </div>
+
+                <!-- Summary Results -->
+                <div class="results" id="summaryResults"></div>
             </div>
 
-            <!-- Summary Results -->
-            <div class="results" id="summaryResults"></div>
+            <!-- Lower Left Section - Instructions -->
+            <div class="instruction-box">
+                <h3>Instructions</h3>
+                <ol style="color: #fff; margin-left: 20px; line-height: 1.6;">
+                    <li>Upload MT5 Report (HTML format)</li>
+                    <li>Upload Metabase Report (CSV format)</li>
+                    <li>Click "Analyze" to compare the data</li>
+                    <li>Review the Summary for any discrepancies</li>
+                    <li>Check Combined Commission Data for detailed comparison</li>
+                </ol>
+            </div>
         </div>
 
         <!-- Right Column -->
@@ -161,7 +183,7 @@
             <!-- Combined Table -->
             <div class="tables-container">
                 <div class="table-wrapper">
-                    <h3>Comparison Data Table</Table></h3>
+                    <h3>Combined Commission Data</h3>
                     <table id="mt5Table"></table>
                     <table id="metabaseTable" style="display: none;"></table>
                 </div>
