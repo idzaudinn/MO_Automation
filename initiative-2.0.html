@@ -18,19 +18,40 @@
             padding: 20px;
         }
 
-        .container {
-            display: flex;
-            gap: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
+        h1 {
+            text-align: left;
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            color: #fff;
+            max-width: 1400px;
+            margin: 0 auto 10px;
+            padding: 0;
         }
 
-        .column {
-            flex: 1;
+        .main-container {
+            display: flex;
+            gap: 20px;
+            max-width: 1400px;
+            margin: auto;
+            margin-top: 20px;
+        }
+
+        .left-side {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex: 0 0 400px;  /* Fixed width of 400px */
+        }
+
+        .left-column, .right-column {
             background: #333;
-            border-radius: 8px;
             padding: 20px;
+            border-radius: 8px;
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .right-column {
+            flex: 1;  /* Takes remaining space */
         }
 
         .input-group {
@@ -44,7 +65,7 @@
             color: #bbb;
         }
 
-        .input-group input {
+        .input-group textarea {
             width: 100%;
             padding: 10px;
             border: 1px solid #555;
@@ -52,9 +73,12 @@
             background: #444;
             color: #fff;
             font-size: 14px;
+            height: 150px;
+            font-family: monospace;
+            resize: vertical;
         }
 
-        .input-group input:focus {
+        .input-group textarea:focus {
             outline: none;
             border-color: #007bff;
             box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
@@ -72,31 +96,206 @@
             margin-bottom: 20px;
             color: #fff;
         }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: #2a2a2a;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #444;
+        }
+
+        .data-table th {
+            background: #1a1a1a;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .data-table td {
+            color: #ddd;
+        }
+
+        .data-table tr:hover {
+            background: #383838;
+        }
+
+        .table-section {
+            margin-bottom: 30px;
+        }
+        
+        .table-title {
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #444;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Left Column -->
-        <div class="column">
-            <div class="input-group">
-                <label for="commission-summary">IB Commission Summary</label>
-                <input type="text" id="commission-summary" name="commission-summary">
-            </div>
-            <div class="input-group">
-                <label for="commission-market">IB Commission Per Market</label>
-                <input type="text" id="commission-market" name="commission-market">
-            </div>
-            <div class="sub-column">
-                <div class="column-header">Additional Column</div>
-                <!-- Add content for the additional column here -->
+    <h1>Initiative 2.0: IB Commission Dashboard</h1>
+
+    <div class="main-container">
+        <!-- Left Side -->
+        <div class="left-side">
+            <!-- Left Column -->
+            <div class="left-column">
+                <div class="input-group">
+                    <label for="commission-summary">IB Commission Summary</label>
+                    <textarea id="commission-summary" name="commission-summary" placeholder="Paste your table data here..."></textarea>
+                </div>
+                <div class="input-group">
+                    <label for="commission-market">IB Commission Per Market</label>
+                    <textarea id="commission-market" name="commission-market"></textarea>
+                </div>
+                <div class="sub-column">
+                    <div class="column-header">Additional Column</div>
+                    <!-- Add content for the additional column here -->
+                </div>
             </div>
         </div>
 
         <!-- Right Column -->
-        <div class="column">
+        <div class="right-column">
             <div class="column-header">Trend</div>
-            <!-- Add trend content here -->
+            <div class="table-section">
+                <h3 class="table-title">IB Commission Summary</h3>
+                <div id="summary-table-container"></div>
+            </div>
+            <div class="table-section">
+                <h3 class="table-title">IB Commission Per Market</h3>
+                <div id="market-table-container"></div>
+            </div>
         </div>
     </div>
+
+    <script>
+        // Event listener for IB Commission Summary
+        document.getElementById('commission-summary').addEventListener('input', function() {
+            const inputText = this.value;
+            const tableHtml = convertToSummaryTable(inputText);
+            document.getElementById('summary-table-container').innerHTML = tableHtml;
+        });
+
+        // Event listener for IB Commission Per Market
+        document.getElementById('commission-market').addEventListener('input', function() {
+            const inputText = this.value;
+            const tableHtml = convertToMarketTable(inputText);
+            document.getElementById('market-table-container').innerHTML = tableHtml;
+        });
+
+        // Function for IB Commission Summary table
+        function convertToSummaryTable(text) {
+            // Split the text into lines and filter out empty lines
+            const lines = text.trim().split('\n').filter(line => line.trim() !== '');
+            
+            // Get all headers (they might be separated by empty lines)
+            const headers = [];
+            let dataStartIndex = 0;
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line.includes('\t')) {
+                    // This is a data line
+                    dataStartIndex = i;
+                    break;
+                }
+                if (line !== '') {
+                    headers.push(line);
+                }
+            }
+
+            // Start building the table
+            let tableHtml = '<table class="data-table">\n<thead>\n<tr>';
+            
+            // Add headers
+            headers.forEach(header => {
+                // Replace underscores with spaces and capitalize each word
+                const formattedHeader = header
+                    .replace(/_/g, ' ')
+                    .split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join(' ');
+                tableHtml += `<th>${formattedHeader}</th>`;
+            });
+            tableHtml += '</tr>\n</thead>\n<tbody>';
+
+            // Process data rows (tab-separated values)
+            for (let i = dataStartIndex; i < lines.length; i++) {
+                const row = lines[i].trim();
+                if (row) {
+                    const cells = row.split('\t');
+                    tableHtml += '\n<tr>';
+                    cells.forEach(cell => {
+                        tableHtml += `<td>${cell}</td>`;
+                    });
+                    tableHtml += '</tr>';
+                }
+            }
+
+            tableHtml += '\n</tbody>\n</table>';
+            return tableHtml;
+        }
+
+        // Function for IB Commission Per Market table
+        function convertToMarketTable(text) {
+            // Split the text into lines and filter out empty lines
+            const lines = text.trim().split('\n').filter(line => line.trim() !== '');
+            
+            // Get all headers (they might be separated by empty lines)
+            const headers = [];
+            let dataStartIndex = 0;
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line.includes('\t')) {
+                    // This is a data line
+                    dataStartIndex = i;
+                    break;
+                }
+                if (line !== '') {
+                    headers.push(line);
+                }
+            }
+
+            // Start building the table
+            let tableHtml = '<table class="data-table">\n<thead>\n<tr>';
+            
+            // Add headers
+            headers.forEach(header => {
+                // Replace underscores with spaces and capitalize each word
+                const formattedHeader = header
+                    .replace(/_/g, ' ')
+                    .split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join(' ');
+                tableHtml += `<th>${formattedHeader}</th>`;
+            });
+            tableHtml += '</tr>\n</thead>\n<tbody>';
+
+            // Process data rows (tab-separated values)
+            for (let i = dataStartIndex; i < lines.length; i++) {
+                const row = lines[i].trim();
+                if (row) {
+                    const cells = row.split('\t');
+                    tableHtml += '\n<tr>';
+                    cells.forEach(cell => {
+                        tableHtml += `<td>${cell}</td>`;
+                    });
+                    tableHtml += '</tr>';
+                }
+            }
+
+            tableHtml += '\n</tbody>\n</table>';
+            return tableHtml;
+        }
+    </script>
 </body>
 </html> 
