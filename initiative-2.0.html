@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB Commission Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: #ddd;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .column {
+            flex: 1;
+            background: #333;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #bbb;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #444;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+
+        .sub-column {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #444;
+        }
+
+        .column-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Column -->
+        <div class="column">
+            <div class="input-group">
+                <label for="commission-summary">IB Commission Summary</label>
+                <input type="text" id="commission-summary" name="commission-summary">
+            </div>
+            <div class="input-group">
+                <label for="commission-market">IB Commission Per Market</label>
+                <input type="text" id="commission-market" name="commission-market">
+            </div>
+            <div class="sub-column">
+                <div class="column-header">Additional Column</div>
+                <!-- Add content for the additional column here -->
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="column">
+            <div class="column-header">Trend</div>
+            <!-- Add trend content here -->
+        </div>
+    </div>
+</body>
+</html> 
