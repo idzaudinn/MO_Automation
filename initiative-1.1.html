@@ -211,24 +211,45 @@
             border: none;
             font-size: 14px;
             transition: background-color 0.3s;
-        }
-
-        #analyzeBtn {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        #resetBtn {
             background-color: #ff4444;
             color: white;
         }
 
-        #analyzeBtn:hover {
-            background-color: #45a049;
+        button:hover {
+            background-color: #ff0000;
         }
 
-        #resetBtn:hover {
-            background-color: #ff0000;
+        /* Remove the analyze button specific styles */
+        #analyzeBtn {
+            display: none;
+        }
+
+        /* Add these new styles */
+        .file-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .file-input-group input[type="file"] {
+            flex: 1;
+            margin-bottom: 0;  /* Override previous margin */
+        }
+
+        .remove-file-btn {
+            background: #ff4444;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            width: auto;  /* Override previous width: 100% */
+        }
+
+        .remove-file-btn:hover {
+            background: #ff0000;
         }
     </style>
 </head>
@@ -246,14 +267,20 @@
                 <!-- File Inputs -->
                 <div class="upload-section">
                     <h3>Upload Files</h3>
+                    
                     <label for="mt5Report">MT5 Report (HTML)</label>
-                    <input type="file" id="mt5Report" accept=".html"> 
+                    <div class="file-input-group">
+                        <input type="file" id="mt5Report" accept=".html">
+                        <button class="remove-file-btn" onclick="removeFile('mt5Report')">Remove</button>
+                    </div>
 
                     <label for="metabaseReport">Metabase Report (CSV)</label>
-                    <input type="file" id="metabaseReport" accept=".csv">
+                    <div class="file-input-group">
+                        <input type="file" id="metabaseReport" accept=".csv">
+                        <button class="remove-file-btn" onclick="removeFile('metabaseReport')">Remove</button>
+                    </div>
 
                     <div class="button-group">
-                        <button id="analyzeBtn" onclick="analyzeData()">Analyze</button>
                         <button id="resetBtn" onclick="resetFiles()">Reset</button>
                     </div>
                 </div>
@@ -652,6 +679,23 @@
             window.metabaseCommissionData = null;
             window.mt5Total = 0;
             window.metabaseTotal = 0;
+        }
+
+        function removeFile(inputId) {
+            const fileInput = document.getElementById(inputId);
+            fileInput.value = '';
+            
+            // Reset corresponding data
+            if (inputId === 'mt5Report') {
+                window.mt5CommissionData = null;
+                window.mt5Total = 0;
+            } else if (inputId === 'metabaseReport') {
+                window.metabaseCommissionData = null;
+                window.metabaseTotal = 0;
+            }
+            
+            // Update the display
+            updateSummaryAndTable();
         }
     </script>
 
