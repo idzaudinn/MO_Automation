@@ -259,6 +259,7 @@
             margin-top: 20px;
             background: #444;
             font-size: 14px;
+            table-layout: fixed;  /* Add this to make columns equal width */
         }
 
         .data-table th,
@@ -266,6 +267,57 @@
             padding: 12px;
             text-align: left;
             border: 1px solid #666;
+            overflow: hidden;  /* Add this to handle long content */
+            text-overflow: ellipsis;  /* Add this to show ellipsis for long content */
+            white-space: nowrap;  /* Add this to prevent text wrapping */
+        }
+
+        /* Add specific column widths for Transfer Summary tables */
+        .data-table th:nth-child(1),
+        .data-table td:nth-child(1),
+        .data-table th:nth-child(2),
+        .data-table td:nth-child(2),
+        .data-table th:nth-child(3),
+        .data-table td:nth-child(3) {
+            width: 33.33%;  /* Equal width for all three columns */
+        }
+
+        /* Add specific column widths for Commission Summary table */
+        .data-table th:nth-child(1),
+        .data-table td:nth-child(1),
+        .data-table th:nth-child(2),
+        .data-table td:nth-child(2),
+        .data-table th:nth-child(3),
+        .data-table td:nth-child(3),
+        .data-table th:nth-child(4),
+        .data-table td:nth-child(4),
+        .data-table th:nth-child(5),
+        .data-table td:nth-child(5),
+        .data-table th:nth-child(6),
+        .data-table td:nth-child(6),
+        .data-table th:nth-child(7),
+        .data-table td:nth-child(7),
+        .data-table th:nth-child(8),
+        .data-table td:nth-child(8) {
+            width: 12.5%;  /* Equal width for all eight columns */
+        }
+
+        /* Add specific column widths for Commission Data table */
+        .data-table th:nth-child(1),
+        .data-table td:nth-child(1),
+        .data-table th:nth-child(2),
+        .data-table td:nth-child(2),
+        .data-table th:nth-child(3),
+        .data-table td:nth-child(3),
+        .data-table th:nth-child(4),
+        .data-table td:nth-child(4),
+        .data-table th:nth-child(5),
+        .data-table td:nth-child(5),
+        .data-table th:nth-child(6),
+        .data-table td:nth-child(6),
+        .data-table th:nth-child(7),
+        .data-table td:nth-child(7) {
+            width: 14.28%;  /* Equal width for all seven columns */
         }
 
         .data-table th {
@@ -290,6 +342,43 @@
         .table-wrapper {
             overflow-x: auto;
             margin-top: 20px;
+        }
+
+        /* Add styles for the top rectangle */
+        .top-rectangle {
+            background: #333;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .top-rectangle h3 {
+            margin: 0 0 15px 0;
+            color: #fff;
+            font-size: 18px;
+        }
+
+        .summary-content {
+            display: flex;
+            gap: 30px;
+        }
+
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .summary-item .label {
+            color: #bbb;
+            font-size: 14px;
+        }
+
+        .summary-item .value {
+            color: #4CAF50;
+            font-size: 24px;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -318,33 +407,17 @@
                         <button id="resetBtn" onclick="resetFiles()">Reset</button>
                     </div>
                 </div>
-
-                <!-- Summary Results -->
-                <div class="results" id="summaryResults"></div>
             </div>
 
             <!-- Lower Left Section - Instructions -->
             <div class="instruction-box">
                 <h3>Instructions</h3>
                 <ol>
-                    <li>Upload MT5 Report (HTML format)</li>
-                    <li>Upload Metabase Report (CSV format)</li>
+                    <li>Please fetch the MT5 report from the <a href="https://metabase-bi.4x.my/dashboard/1446-marketing-assistance-response-keyworker-dashboard?affiliate_id=&client_cr=&client_mt5_=&end_date=&ib_main_mt5=930261&start_date=&tab=276-new" target="_blank"><i>Metabase</i></a></li>
+                    <li>Upload the Metabase Report (CSV format)</li>
                     <li>The results will be displayed in the right column</li>
                     <li>Review the Summary for any discrepancies</li>
                 </ol>
-                <h3>MT5 Report</h3>
-                <ol>
-                    <li>Please fetch the MT5 report from the <a href="https://deriv-group.slack.com/archives/C03EAHR4P2L" target="_blank"><i>#sideoffice_mt5</i></a> channel</li>
-                    <li>Save the generated file</li>
-                    <li>Upload the MT5 report to the <i>Upload MT5 Report (HTML)</i> section</li>
-                </ol>
-                <h3>Metabase Report</h3>
-                <ol>
-                    <li>Please fetch the Metabase report from <a href="https://metabase-bi.4x.my/dashboard/1446-marketing-assistance-response-keyworker-dashboard?affiliate_id=266497&client_cr=&client_mt5_=&end_date=&ib_main_mt5=&start_date=&tab=272-ai-initiative-1" target="_blank"><i>Metabase Agent_MARK</i></a> channel</li>
-                    <li>Save the generated file as CSV</li>
-                    <li>Upload the Metabase report to the <i>Upload Metabase Report (CSV)</i> section</li>
-                </ol>
-                    
             </div>
         </div>
 
@@ -360,6 +433,96 @@
     <script>
         let mt5Data = [];
         let metabaseData = [];
+
+        // Initialize the right column with Commission Summary when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const rightColumn = document.querySelector('.right-column');
+            rightColumn.innerHTML = `
+                <div class="top-rectangle">
+                    <div style="margin-bottom: 20px; padding: 15px; background: #444; border-radius: 4px;">
+                        <h3 style="margin: 0 0 10px 0;">AFF Main MT5</h3>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            <div style="color: #888;">No main account MT5s available</div>
+                        </div>
+                    </div>
+                    <h3>Transfer Summary</h3>
+                    <div class="table-wrapper" style="display: flex; gap: 20px;">
+                        <table class="data-table" style="margin-top: 0; flex: 1;">
+                            <thead>
+                                <tr>
+                                    <th>Technical Transfer</th>
+                                    <th>Transferred</th>
+                                    <th>Not Transferred</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="3" style="text-align: center; color: #888;">No data available</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table class="data-table" style="margin-top: 0; flex: 1;">
+                            <thead>
+                                <tr>
+                                    <th>EOD Total</th>
+                                    <th>Main Total</th>
+                                    <th>Not Transferred Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="3" style="text-align: center; color: #888;">No data available</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <h3 style="margin-top: 20px;">Results</h3>
+                    <div class="table-wrapper">
+                        <h3>Commission Summary</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Deal ID</th>
+                                    <th>Account Type</th>
+                                    <th>Technical Account</th>
+                                    <th>Technical Date</th>
+                                    <th>Main Account</th>
+                                    <th>Main Date</th>
+                                    <th>Commission</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="8" style="text-align: center; color: #888;">No data available</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <h3>Fetched Data</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Affiliate MT5</th>
+                                <th>Deal ID</th>
+                                <th>IB Account Type</th>
+                                <th>Commission</th>
+                                <th>MT5 Comment</th>
+                                <th>Commission Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: #888;">No data available</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        });
 
         document.getElementById('metabaseReport').addEventListener('change', function(event) {
             const file = event.target.files[0];
@@ -413,10 +576,13 @@
                 let metabaseData = {};
                 let totalCommission = 0;
                 let tableData = [];
+                let transferStatus = {}; // New object to track transfer status
+                let mainAccountCommissions = {}; // New object to track main account commissions
 
                 // Get headers from first line
                 const headers = lines[0].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/g).map(h => h.replace(/"/g, '').trim());
 
+                // First pass: collect all technical account entries
                 for (let i = 1; i < lines.length; i++) {
                     if (!lines[i]) continue;
 
@@ -426,6 +592,9 @@
                         try {
                             let standardDate = standardizeDateFormat(row[0]);
                             let commission = parseFloat(row[4].replace(/"/g, '').trim());
+                            let dealId = row[2].replace(/"/g, '').replace(/,/g, '').trim();
+                            let accountType = row[3].replace(/"/g, '').trim();
+                            let mt5Comment = row[5].replace(/"/g, '').trim();
 
                             if (!isNaN(commission)) { 
                                 metabaseData[standardDate] = (metabaseData[standardDate] || 0) + commission;
@@ -436,12 +605,66 @@
                             tableData.push({
                                 date: standardDate,
                                 Affiliate_MT5: row[1].replace(/"/g, '').replace(/,/g, '').trim(),
-                                Deal_ID: row[2].replace(/"/g, '').replace(/,/g, '').trim(),
-                                IB_account_type: row[3].replace(/"/g, '').trim(),
+                                Deal_ID: dealId,
+                                IB_account_type: accountType,
                                 Commission: commission.toFixed(2),
-                                MT5_Comment: row[5].replace(/"/g, '').trim(),
+                                MT5_Comment: mt5Comment,
                                 Commission_Type: row[6].replace(/"/g, '').trim()
                             });
+
+                            // Track technical account entries
+                            if (accountType === 'technical') {
+                                transferStatus[dealId] = {
+                                    technicalDate: standardDate,
+                                    technicalAccount: row[1].replace(/"/g, '').replace(/,/g, '').trim(),
+                                    commission: commission,
+                                    transferred: false
+                                };
+                            } else if (accountType === 'main') {
+                                // Track main account commissions
+                                const mainAccount = row[1].replace(/"/g, '').replace(/,/g, '').trim();
+                                if (!mainAccountCommissions[mainAccount]) {
+                                    mainAccountCommissions[mainAccount] = {
+                                        totalCommission: 0,
+                                        date: standardDate
+                                    };
+                                }
+                                mainAccountCommissions[mainAccount].totalCommission += commission;
+                            }
+                        } catch (e) {
+                            console.error('Error processing row:', row, e);
+                        }
+                    }
+                }
+
+                // Second pass: check for transfers in main accounts
+                for (let i = 1; i < lines.length; i++) {
+                    if (!lines[i]) continue;
+
+                    let row = lines[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/g);
+                    
+                    if (row.length >= 7) {
+                        try {
+                            let dealId = row[2].replace(/"/g, '').replace(/,/g, '').trim();
+                            let accountType = row[3].replace(/"/g, '').trim();
+                            let mt5Comment = row[5].replace(/"/g, '').trim();
+
+                            // Check if this is a main account entry
+                            if (accountType === 'main') {
+                                // Look for the deal ID in the MT5 comment
+                                const commentDealId = mt5Comment.match(/deal (\d+)/);
+                                if (commentDealId && commentDealId[1]) {
+                                    const originalDealId = commentDealId[1];
+                                    if (transferStatus[originalDealId]) {
+                                        transferStatus[originalDealId] = {
+                                            ...transferStatus[originalDealId],
+                                            mainDate: standardizeDateFormat(row[0]),
+                                            mainAccount: row[1].replace(/"/g, '').replace(/,/g, '').trim(),
+                                            transferred: true
+                                        };
+                                    }
+                                }
+                            }
                         } catch (e) {
                             console.error('Error processing row:', row, e);
                         }
@@ -451,8 +674,10 @@
                 window.metabaseCommissionData = metabaseData;
                 window.metabaseTotal = totalCommission;
                 window.tableData = tableData;
+                window.transferStatus = transferStatus;
+                window.mainAccountCommissions = mainAccountCommissions;
                 
-                console.log('Metabase Data after standardization:', metabaseData);
+                console.log('Transfer Status:', transferStatus); // Debug log
                 updateSummaryAndTable();
                 displayDataTable();
             };
@@ -462,10 +687,149 @@
         function displayDataTable() {
             const rightColumn = document.querySelector('.right-column');
             const tableData = window.tableData || [];
+            const transferStatus = window.transferStatus || {};
+            const mainAccountCommissions = window.mainAccountCommissions || {};
+            const totalCommission = window.metabaseTotal || 0;
+
+            // Count unique deals
+            const uniqueDeals = new Set(tableData.map(row => row.Deal_ID)).size;
+
+            // Count technical transfers
+            const technicalTransferCount = tableData.filter(row => row.IB_account_type === 'technical').length;
+
+            // Count transferred deals
+            const transferredCount = Object.values(transferStatus).filter(status => status.transferred).length;
+            const notTransferredCount = Object.values(transferStatus).filter(status => !status.transferred).length;
+
+            // Calculate not transferred commission amount
+            const notTransferredAmount = Object.values(transferStatus)
+                .filter(status => !status.transferred)
+                .reduce((sum, status) => sum + status.commission, 0);
+
+            // Calculate EOD total
+            const eodTotal = tableData
+                .filter(row => row.Commission_Type === 'EOD')
+                .reduce((sum, row) => sum + parseFloat(row.Commission), 0);
+
+            // Calculate Main total
+            const mainTotal = Object.values(mainAccountCommissions)
+                .reduce((sum, data) => sum + data.totalCommission, 0);
 
             let tableHTML = `
+                <div class="top-rectangle">
+                    <div style="margin-bottom: 20px; padding: 15px; background: #444; border-radius: 4px;">
+                        <h3 style="margin: 0 0 10px 0;">AFF Main MT5</h3>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            `;
+
+            // Add main account MT5s
+            const mainAccountMT5s = Object.keys(mainAccountCommissions);
+            if (mainAccountMT5s.length > 0) {
+                mainAccountMT5s.forEach(mt5 => {
+                    tableHTML += `
+                        <div style="background: #555; padding: 8px 12px; border-radius: 4px; color: #4CAF50;">
+                            ${mt5}
+                        </div>
+                    `;
+                });
+            } else {
+                tableHTML += `
+                    <div style="color: #888;">No main account MT5s available</div>
+                `;
+            }
+
+            tableHTML += `
+                        </div>
+                    </div>
+                    <h3>Transfer Summary</h3>
+                    <div class="table-wrapper" style="display: flex; gap: 20px;">
+                        <table class="data-table" style="margin-top: 0; flex: 1;">
+                            <thead>
+                                <tr>
+                                    <th>Technical Transfer</th>
+                                    <th>Transferred</th>
+                                    <th>Not Transferred</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>${technicalTransferCount}</td>
+                                    <td>${transferredCount}</td>
+                                    <td style="color: #ff4444">${notTransferredCount}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table class="data-table" style="margin-top: 0; flex: 1;">
+                            <thead>
+                                <tr>
+                                    <th>EOD Total</th>
+                                    <th>Main Total</th>
+                                    <th>Not Transferred Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>${eodTotal.toFixed(2)}</td>
+                                    <td>${mainTotal.toFixed(2)}</td>
+                                    <td style="color: #ff4444">${notTransferredAmount.toFixed(2)}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <h3 style="margin-top: 20px;">Results</h3>
+                    <div class="table-wrapper">
+                        <h3>Commission Summary</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Deal ID</th>
+                                    <th>Account Type</th>
+                                    <th>Technical Account</th>
+                                    <th>Technical Date</th>
+                                    <th>Main Account</th>
+                                    <th>Main Date</th>
+                                    <th>Commission</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            // Add transfer status rows
+            Object.entries(transferStatus).forEach(([dealId, status]) => {
+                // Only show Not Transferred entries
+                if (!status.transferred) {
+                    tableHTML += `
+                        <tr>
+                            <td>${dealId}</td>
+                            <td>Technical</td>
+                            <td>${status.technicalAccount || '-'}</td>
+                            <td>${status.technicalDate || '-'}</td>
+                            <td>${status.mainAccount || '-'}</td>
+                            <td>${status.mainDate || '-'}</td>
+                            <td>${status.commission.toFixed(2)}</td>
+                            <td style="color: #ff4444">Not Transferred</td>
+                        </tr>
+                    `;
+                }
+            });
+
+            // Remove main account rows since we only want to show Not Transferred entries
+            if (Object.keys(transferStatus).filter(dealId => !transferStatus[dealId].transferred).length === 0) {
+                tableHTML += `
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: #888;">No Not Transferred entries available</td>
+                    </tr>
+                `;
+            }
+
+            tableHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
                 <div class="table-wrapper">
-                    <h3>Commission Data</h3>
+                    <h3>Fetched Data</h3>
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -481,19 +845,27 @@
                         <tbody>
             `;
 
-            tableData.forEach(row => {
+            if (tableData.length > 0) {
+                tableData.forEach(row => {
+                    tableHTML += `
+                        <tr>
+                            <td>${row.date}</td>
+                            <td>${row.Affiliate_MT5}</td>
+                            <td>${row.Deal_ID}</td>
+                            <td>${row.IB_account_type}</td>
+                            <td>${row.Commission}</td>
+                            <td>${row.MT5_Comment}</td>
+                            <td>${row.Commission_Type}</td>
+                        </tr>
+                    `;
+                });
+            } else {
                 tableHTML += `
                     <tr>
-                        <td>${row.date}</td>
-                        <td>${row.Affiliate_MT5}</td>
-                        <td>${row.Deal_ID}</td>
-                        <td>${row.IB_account_type}</td>
-                        <td>${row.Commission}</td>
-                        <td>${row.MT5_Comment}</td>
-                        <td>${row.Commission_Type}</td>
+                        <td colspan="7" style="text-align: center; color: #888;">No data available</td>
                     </tr>
                 `;
-            });
+            }
 
             tableHTML += `
                         </tbody>
@@ -511,162 +883,188 @@
             // Check if metabase report is missing
             const isMetabaseMissing = Object.keys(metabaseData).length === 0;
 
-            console.log('Updating table with:', { metabaseData }); // Debug log
+            // Create message box based on conditions
+            let messageBox = '';
+            if (isMetabaseMissing) {
+                messageBox = `
+                    <div style="
+                        width: 100%;
+                        margin-top: 10px;
+                        padding: 10px;
+                        background: #ffd700;
+                        color: black;
+                        text-align: center;
+                        border-radius: 4px;
+                        box-sizing: border-box;
+                    ">
+                        Metabase Report is missing
+                    </div>
+                `;
+            } else {
+                messageBox = `
+                    <div style="
+                        width: 100%;
+                        margin-top: 10px;
+                        padding: 10px;
+                        background: #4CAF50;
+                        color: white;
+                        text-align: center;
+                        border-radius: 4px;
+                        box-sizing: border-box;
+                    ">
+                        Process completed
+                    </div>
+                `;
+            }
 
-            // Create combined set of dates
-            let allDates = new Set(Object.keys(metabaseData));
+            // Update the message in the left column
+            const leftColumn = document.querySelector('.left-column');
+            leftColumn.innerHTML = `
+                <div class="upload-section">
+                    <h3>Upload Files</h3>
+                    
+                    <label for="metabaseReport">Metabase Report (CSV)</label>
+                    <div class="file-input-group">
+                        <input type="file" id="metabaseReport" accept=".csv">
+                        <button class="remove-file-btn" onclick="removeFile('metabaseReport')">Remove</button>
+                    </div>
 
-            // Generate table HTML with the new class
-            let tableHTML = `
-                <tr>
-                    <th colspan="2" style="width: 40%">Metabase</th>
-                </tr>
-                <tr>
-                    <th style="width: 20%">Date</th>
-                    <th style="width: 20%">Recalculated Commission</th>
-                </tr>
+                    <div class="button-group">
+                        <button id="resetBtn" onclick="resetFiles()">Reset</button>
+                    </div>
+                </div>
+                ${messageBox}
             `;
 
-            // Sort dates and create rows
-            [...allDates].sort().forEach(date => {
-                const metabaseValue = metabaseData[date] || 0;
-                
-                tableHTML += `
-                    <tr>
-                        <td style="width: 20%">${date}</td>
-                        <td style="width: 20%">${metabaseValue.toFixed(2)}</td>
-                    </tr>
-                `;
+            // Reattach the event listener for the file input
+            document.getElementById('metabaseReport').addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                readMetabaseFile(file);
             });
-
-            // Update the table with the new class
-            const tableElement = document.getElementById("metabaseTable");
-            if (tableElement) {
-                tableElement.className = 'combined-table';
-                tableElement.innerHTML = tableHTML;
-            }
-
-            // Update summary with table format
-            const summaryElement = document.getElementById("summaryResults");
-            if (summaryElement) {
-                let discrepancyAmount = (metabaseTotal).toFixed(2);
-                let discrepancyColor = discrepancyAmount == 0 ? "#4CAF50" : "red";
-                
-                // Create message box based on conditions
-                let messageBox = '';
-                if (isMetabaseMissing) {
-                    messageBox = `
-                        <div style="
-                            width: 100%;
-                            margin-top: 10px;
-                            padding: 10px;
-                            background: #ffd700;
-                            color: black;
-                            text-align: center;
-                            border-radius: 4px;
-                            box-sizing: border-box;
-                        ">
-                            Metabase Report is missing
-                        </div>
-                    `;
-                } else {
-                    messageBox = `
-                        <div style="
-                            width: 100%;
-                            margin-top: 10px;
-                            padding: 10px;
-                            background: #4CAF50;
-                            color: white;
-                            text-align: center;
-                            border-radius: 4px;
-                            box-sizing: border-box;
-                        ">
-                            Metabase report is complete
-                        </div>
-                    `;
-                }
-
-                let summaryHTML = `
-                    <h3>Summary</h3>
-                    <table style="width: 100%; margin-top: 10px;">
-                        <tr>
-                            <th>Metabase Report</th>
-                        </tr>
-                        <tr>
-                            <td><strong style="font-size: 18px; color: ${discrepancyColor};">${discrepancyAmount}</strong></td>
-                        </tr>
-                    </table>
-                    ${messageBox}
-                `;
-                summaryElement.innerHTML = summaryHTML;
-            }
-        }
-
-        function analyzeData() {
-            if (metabaseData.length === 0) {
-                alert("Please upload the Metabase report before analyzing.");
-                return;
-            }
-            
-            // Get the total commission directly from the summaryResults
-            let summaryElement = document.getElementById("summaryResults");
-            let totalMetabase = parseFloat(summaryElement.querySelector('strong').textContent);
-
-            let summaryHTML = `
-                <h3>Summary</h3>
-                <p>Total Metabase Commissions: <strong>${totalMetabase.toFixed(2)}</strong></p>
-            `;
-            document.getElementById("summaryResults").innerHTML = summaryHTML;
-
-            drawChart(metabaseData, totalMetabase);
-        }
-
-        function drawChart(metabase, metabaseTotal) {
-            const canvas = document.getElementById("comparisonChart");
-            const ctx = canvas.getContext("2d");
-            canvas.width = 800; 
-            canvas.height = 300; 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Set white text color
-            ctx.fillStyle = "white";
-            ctx.font = "14px Arial";
-            
-            // Draw title
-            ctx.fillText("Commission Comparison", 10, 20);
-            
-            // Draw Metabase data
-            ctx.fillStyle = "red";
-            let totalMetabase = metabase.reduce((sum, row) => sum + row.profit, 0);
-            
-            // Draw bars
-            const barWidth = 100;
-            const maxHeight = 200;
-            
-            // Metabase bar
-            ctx.fillStyle = "red";
-            const metabaseHeight = (totalMetabase / Math.max(totalMetabase, metabaseTotal)) * maxHeight;
-            ctx.fillRect(200, 280 - metabaseHeight, barWidth, metabaseHeight);
-            
-            // Draw labels
-            ctx.fillStyle = "white";
-            ctx.fillText(`Metabase: ${totalMetabase.toFixed(2)}`, 200, 295);
         }
 
         function resetFiles() {
             // Clear file inputs
             document.getElementById('metabaseReport').value = '';
             
-            // Clear the right column
-            document.querySelector('.right-column').innerHTML = '';
-            
-            // Clear the summary results
-            document.getElementById('summaryResults').innerHTML = '';
-            
             // Reset any global variables
             window.metabaseCommissionData = null;
             window.metabaseTotal = 0;
             window.tableData = null;
+            window.transferStatus = null;
+            window.mainAccountCommissions = null;
+
+            // Reinitialize the right column with empty tables
+            const rightColumn = document.querySelector('.right-column');
+            rightColumn.innerHTML = `
+                <div class="top-rectangle">
+                    <div style="margin-bottom: 20px; padding: 15px; background: #444; border-radius: 4px;">
+                        <h3 style="margin: 0 0 10px 0;">AFF Main MT5</h3>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            <div style="color: #888;">No main account MT5s available</div>
+                        </div>
+                    </div>
+                    <h3>Transfer Summary</h3>
+                    <div class="table-wrapper" style="display: flex; gap: 20px;">
+                        <table class="data-table" style="margin-top: 0; flex: 1;">
+                            <thead>
+                                <tr>
+                                    <th>Technical Transfer</th>
+                                    <th>Transferred</th>
+                                    <th>Not Transferred</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="3" style="text-align: center; color: #888;">No data available</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table class="data-table" style="margin-top: 0; flex: 1;">
+                            <thead>
+                                <tr>
+                                    <th>EOD Total</th>
+                                    <th>Main Total</th>
+                                    <th>Not Transferred Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="3" style="text-align: center; color: #888;">No data available</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <h3 style="margin-top: 20px;">Results</h3>
+                    <div class="table-wrapper">
+                        <h3>Commission Summary</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Deal ID</th>
+                                    <th>Account Type</th>
+                                    <th>Technical Account</th>
+                                    <th>Technical Date</th>
+                                    <th>Main Account</th>
+                                    <th>Main Date</th>
+                                    <th>Commission</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="8" style="text-align: center; color: #888;">No data available</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <h3>Fetched Data</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Affiliate MT5</th>
+                                <th>Deal ID</th>
+                                <th>IB Account Type</th>
+                                <th>Commission</th>
+                                <th>MT5 Comment</th>
+                                <th>Commission Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: #888;">No data available</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            // Reset the left column to show only the upload section
+            const leftColumn = document.querySelector('.left-column');
+            leftColumn.innerHTML = `
+                <div class="upload-section">
+                    <h3>Upload Files</h3>
+                    
+                    <label for="metabaseReport">Metabase Report (CSV)</label>
+                    <div class="file-input-group">
+                        <input type="file" id="metabaseReport" accept=".csv">
+                        <button class="remove-file-btn" onclick="removeFile('metabaseReport')">Remove</button>
+                    </div>
+
+                    <div class="button-group">
+                        <button id="resetBtn" onclick="resetFiles()">Reset</button>
+                    </div>
+                </div>
+            `;
+
+            // Reattach the event listener for the file input
+            document.getElementById('metabaseReport').addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                readMetabaseFile(file);
+            });
         }
 
         function removeFile(inputId) {
@@ -677,10 +1075,14 @@
             if (inputId === 'metabaseReport') {
                 window.metabaseCommissionData = null;
                 window.metabaseTotal = 0;
+                window.tableData = null;
+                window.transferStatus = null;
+                window.mainAccountCommissions = null;
             }
             
             // Update the display
             updateSummaryAndTable();
+            displayDataTable();
         }
     </script>
 
