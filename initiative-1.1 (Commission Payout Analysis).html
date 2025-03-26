@@ -251,6 +251,46 @@
         .remove-file-btn:hover {
             background: #ff0000;
         }
+
+        /* Add styles for the data table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: #444;
+            font-size: 14px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #666;
+        }
+
+        .data-table th {
+            background: #555;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .data-table tr:nth-child(even) {
+            background: #3a3a3a;
+        }
+
+        .data-table tr:hover {
+            background: #4a4a4a;
+        }
+
+        .data-table td {
+            color: #ddd;
+        }
+
+        /* Add horizontal scroll for table */
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -268,12 +308,6 @@
                 <div class="upload-section">
                     <h3>Upload Files</h3>
                     
-                    <label for="mt5Report">MT5 Report (HTML)</label>
-                    <div class="file-input-group">
-                        <input type="file" id="mt5Report" accept=".html">
-                        <button class="remove-file-btn" onclick="removeFile('mt5Report')">Remove</button>
-                    </div>
-
                     <label for="metabaseReport">Metabase Report (CSV)</label>
                     <div class="file-input-group">
                         <input type="file" id="metabaseReport" accept=".csv">
@@ -316,47 +350,7 @@
 
         <!-- Right Column -->
         <div class="right-column">
-            <!-- New Commission Summary Table -->
-            <div class="tables-container">
-                <div class="table-wrapper">
-                    <h3>Commission Summary</h3>
-                    <table id="commissionSummaryTable" class="combined-table">
-                        <tr>
-                            <th rowspan="2">Date</th>
-                            <th colspan="2">Main</th>
-                            <th colspan="2">Tech</th>
-                        </tr>
-                        <tr>
-                            <th>Expected</th>
-                            <th>Credited</th>
-                            <th>Expected</th>
-                            <th>Credited</th>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Existing Combined Table -->
-            <div class="tables-container">
-                <div class="table-wrapper">
-                    <h3>Combined Commissions Data</h3>
-                    <table id="mt5Table" class="combined-table">
-                        <tr>
-                            <th colspan="2" style="width: 40%">MT5</th>
-                            <th colspan="2" style="width: 40%">Metabase</th>
-                            <th style="width: 20%">Discrepancies</th>
-                        </tr>
-                        <tr>
-                            <th style="width: 20%">Date</th>
-                            <th style="width: 20%">Commission</th>
-                            <th style="width: 20%">Date</th>
-                            <th style="width: 20%">Recalculated Commission</th>
-                            <th style="width: 20%">Difference</th>
-                        </tr>
-                    </table>
-                    <table id="metabaseTable" style="display: none;"></table>
-                </div>
-            </div>
+            <!-- Empty container for future content -->
         </div>
     </div>
 
@@ -366,11 +360,6 @@
     <script>
         let mt5Data = [];
         let metabaseData = [];
-
-        document.getElementById('mt5Report').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            readMT5File(file);
-        });
 
         document.getElementById('metabaseReport').addEventListener('change', function(event) {
             const file = event.target.files[0];
@@ -416,46 +405,6 @@
             }
         }
 
-        function readMT5File(file) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(event.target.result, "text/html");
-                const rows = doc.querySelectorAll("tr");
-
-                let commissionData = {};
-                let totalMT5Commission = 0;
-                
-                rows.forEach(row => {
-                    const columns = row.getElementsByTagName("td");
-
-                    if (columns.length >= 12) {  
-                        let fullDate = columns[0].textContent.trim();
-                        let type = columns[3].textContent.trim();
-                        let commission = parseFloat(columns[11].textContent.trim()) || 0;
-                        
-                        if (type === "daily agent commission") {
-                            let standardDate = standardizeDateFormat(fullDate);
-                            
-                            if (commissionData[standardDate]) {
-                                commissionData[standardDate] += commission;
-                            } else {
-                                commissionData[standardDate] = commission;
-                            }
-                            totalMT5Commission += commission;
-                        }
-                    }
-                });
-
-                window.mt5CommissionData = commissionData;
-                window.mt5Total = totalMT5Commission;
-                
-                console.log('MT5 Data after standardization:', commissionData); // Debug log
-                updateSummaryAndTable();
-            };
-            reader.readAsText(file);
-        }
-
         function readMetabaseFile(file) {
             const reader = new FileReader();
             reader.onload = function(event) {
@@ -463,21 +412,36 @@
 
                 let metabaseData = {};
                 let totalCommission = 0;
+                let tableData = [];
+
+                // Get headers from first line
+                const headers = lines[0].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/g).map(h => h.replace(/"/g, '').trim());
 
                 for (let i = 1; i < lines.length; i++) {
                     if (!lines[i]) continue;
 
                     let row = lines[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/g);
                     
-                    if (row.length >= 3) {
+                    if (row.length >= 7) {
                         try {
                             let standardDate = standardizeDateFormat(row[0]);
-                            let commission = parseFloat(row[2].replace(/"/g, '').trim());
+                            let commission = parseFloat(row[4].replace(/"/g, '').trim());
 
                             if (!isNaN(commission)) { 
                                 metabaseData[standardDate] = (metabaseData[standardDate] || 0) + commission;
                                 totalCommission += commission;
                             }
+
+                            // Store row data for table display
+                            tableData.push({
+                                date: standardDate,
+                                Affiliate_MT5: row[1].replace(/"/g, '').replace(/,/g, '').trim(),
+                                Deal_ID: row[2].replace(/"/g, '').replace(/,/g, '').trim(),
+                                IB_account_type: row[3].replace(/"/g, '').trim(),
+                                Commission: commission.toFixed(2),
+                                MT5_Comment: row[5].replace(/"/g, '').trim(),
+                                Commission_Type: row[6].replace(/"/g, '').trim()
+                            });
                         } catch (e) {
                             console.error('Error processing row:', row, e);
                         }
@@ -486,72 +450,97 @@
 
                 window.metabaseCommissionData = metabaseData;
                 window.metabaseTotal = totalCommission;
+                window.tableData = tableData;
                 
-                console.log('Metabase Data after standardization:', metabaseData); // Debug log
+                console.log('Metabase Data after standardization:', metabaseData);
                 updateSummaryAndTable();
+                displayDataTable();
             };
             reader.readAsText(file);
         }
 
+        function displayDataTable() {
+            const rightColumn = document.querySelector('.right-column');
+            const tableData = window.tableData || [];
+
+            let tableHTML = `
+                <div class="table-wrapper">
+                    <h3>Commission Data</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Affiliate MT5</th>
+                                <th>Deal ID</th>
+                                <th>IB Account Type</th>
+                                <th>Commission</th>
+                                <th>MT5 Comment</th>
+                                <th>Commission Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            tableData.forEach(row => {
+                tableHTML += `
+                    <tr>
+                        <td>${row.date}</td>
+                        <td>${row.Affiliate_MT5}</td>
+                        <td>${row.Deal_ID}</td>
+                        <td>${row.IB_account_type}</td>
+                        <td>${row.Commission}</td>
+                        <td>${row.MT5_Comment}</td>
+                        <td>${row.Commission_Type}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            rightColumn.innerHTML = tableHTML;
+        }
+
         function updateSummaryAndTable() {
-            const mt5Data = window.mt5CommissionData || {};
             const metabaseData = window.metabaseCommissionData || {};
-            const mt5Total = window.mt5Total || 0;
             const metabaseTotal = window.metabaseTotal || 0;
 
-            // Check if either report is missing
-            const isMT5Missing = Object.keys(mt5Data).length === 0;
+            // Check if metabase report is missing
             const isMetabaseMissing = Object.keys(metabaseData).length === 0;
 
-            console.log('Updating table with:', { mt5Data, metabaseData }); // Debug log
+            console.log('Updating table with:', { metabaseData }); // Debug log
 
             // Create combined set of dates
-            let allDates = new Set([
-                ...Object.keys(mt5Data),
-                ...Object.keys(metabaseData)
-            ]);
+            let allDates = new Set(Object.keys(metabaseData));
 
             // Generate table HTML with the new class
             let tableHTML = `
                 <tr>
-                    <th colspan="2" style="width: 40%">MT5</th>
                     <th colspan="2" style="width: 40%">Metabase</th>
-                    <th style="width: 20%">Discrepancies</th>
                 </tr>
                 <tr>
                     <th style="width: 20%">Date</th>
-                    <th style="width: 20%">Commission</th>
-                    <th style="width: 20%">Date</th>
                     <th style="width: 20%">Recalculated Commission</th>
-                    <th style="width: 20%">Difference</th>
                 </tr>
             `;
 
             // Sort dates and create rows
             [...allDates].sort().forEach(date => {
-                const mt5Value = mt5Data[date] || 0;
                 const metabaseValue = metabaseData[date] || 0;
-                const discrepancy = (mt5Value - metabaseValue).toFixed(2);
-                
-                // Only show discrepancy if it's not -0.00 or 0.00
-                const displayDiscrepancy = discrepancy === '-0.00' || discrepancy === '0.00' ? '0.00' : discrepancy;
-                
-                // Add background color for discrepancies
-                const discrepancyStyle = displayDiscrepancy === '0.00' ? '' : 'background-color: #ff4444;';
                 
                 tableHTML += `
                     <tr>
                         <td style="width: 20%">${date}</td>
-                        <td style="width: 20%">${mt5Value.toFixed(2)}</td>
-                        <td style="width: 20%">${date}</td>
                         <td style="width: 20%">${metabaseValue.toFixed(2)}</td>
-                        <td style="width: 20%; ${discrepancyStyle}">${displayDiscrepancy}</td>
                     </tr>
                 `;
             });
 
             // Update the table with the new class
-            const tableElement = document.getElementById("mt5Table");
+            const tableElement = document.getElementById("metabaseTable");
             if (tableElement) {
                 tableElement.className = 'combined-table';
                 tableElement.innerHTML = tableHTML;
@@ -560,12 +549,12 @@
             // Update summary with table format
             const summaryElement = document.getElementById("summaryResults");
             if (summaryElement) {
-                let discrepancyAmount = (mt5Total - metabaseTotal).toFixed(2);
+                let discrepancyAmount = (metabaseTotal).toFixed(2);
                 let discrepancyColor = discrepancyAmount == 0 ? "#4CAF50" : "red";
                 
                 // Create message box based on conditions
                 let messageBox = '';
-                if (isMT5Missing || isMetabaseMissing) {
+                if (isMetabaseMissing) {
                     messageBox = `
                         <div style="
                             width: 100%;
@@ -577,10 +566,10 @@
                             border-radius: 4px;
                             box-sizing: border-box;
                         ">
-                            ${isMT5Missing ? "MT5 Report is missing" : "Metabase Report is missing"}
+                            Metabase Report is missing
                         </div>
                     `;
-                } else if (discrepancyAmount == 0) {
+                } else {
                     messageBox = `
                         <div style="
                             width: 100%;
@@ -592,22 +581,7 @@
                             border-radius: 4px;
                             box-sizing: border-box;
                         ">
-                            MT5 report and Metabase matched, no discrepancies
-                        </div>
-                    `;
-                } else {
-                    messageBox = `
-                        <div style="
-                            width: 100%;
-                            margin-top: 10px;
-                            padding: 10px;
-                            background: #ff4444;
-                            color: white;
-                            text-align: center;
-                            border-radius: 4px;
-                            box-sizing: border-box;
-                        ">
-                            There are discrepancies between MT5 report and Metabase
+                            Metabase report is complete
                         </div>
                     `;
                 }
@@ -616,13 +590,9 @@
                     <h3>Summary</h3>
                     <table style="width: 100%; margin-top: 10px;">
                         <tr>
-                            <th>MT5 Report</th>
                             <th>Metabase Report</th>
-                            <th>Discrepancies</th>
                         </tr>
                         <tr>
-                            <td><strong style="font-size: 18px; color: #4CAF50;">${mt5Total.toFixed(2)}</strong></td>
-                            <td><strong style="font-size: 18px; color: #4CAF50;">${metabaseTotal.toFixed(2)}</strong></td>
                             <td><strong style="font-size: 18px; color: ${discrepancyColor};">${discrepancyAmount}</strong></td>
                         </tr>
                     </table>
@@ -633,31 +603,25 @@
         }
 
         function analyzeData() {
-            if (mt5Data.length === 0) {
-                alert("Please upload both reports before analyzing.");
+            if (metabaseData.length === 0) {
+                alert("Please upload the Metabase report before analyzing.");
                 return;
             }
-
-            let totalMT5 = mt5Data.reduce((sum, row) => sum + row.profit, 0);
             
             // Get the total commission directly from the summaryResults
             let summaryElement = document.getElementById("summaryResults");
             let totalMetabase = parseFloat(summaryElement.querySelector('strong').textContent);
 
-            let difference = totalMT5 - totalMetabase;
-
             let summaryHTML = `
                 <h3>Summary</h3>
-                <p>Total MT5 Commissions: <strong>${totalMT5.toFixed(2)}</strong></p>
                 <p>Total Metabase Commissions: <strong>${totalMetabase.toFixed(2)}</strong></p>
-                <p>Difference: <strong style="color: ${difference === 0 ? 'green' : 'red'}">${difference.toFixed(2)}</strong></p>
             `;
             document.getElementById("summaryResults").innerHTML = summaryHTML;
 
-            drawChart(mt5Data, totalMetabase);
+            drawChart(metabaseData, totalMetabase);
         }
 
-        function drawChart(mt5, metabaseTotal) {
+        function drawChart(metabase, metabaseTotal) {
             const canvas = document.getElementById("comparisonChart");
             const ctx = canvas.getContext("2d");
             canvas.width = 800; 
@@ -671,63 +635,38 @@
             // Draw title
             ctx.fillText("Commission Comparison", 10, 20);
             
-            // Draw MT5 data
-            ctx.fillStyle = "green";
-            let totalMT5 = mt5.reduce((sum, row) => sum + row.profit, 0);
+            // Draw Metabase data
+            ctx.fillStyle = "red";
+            let totalMetabase = metabase.reduce((sum, row) => sum + row.profit, 0);
             
             // Draw bars
             const barWidth = 100;
             const maxHeight = 200;
             
-            // MT5 bar
-            ctx.fillStyle = "green";
-            const mt5Height = (totalMT5 / Math.max(totalMT5, metabaseTotal)) * maxHeight;
-            ctx.fillRect(200, 280 - mt5Height, barWidth, mt5Height);
-            
             // Metabase bar
             ctx.fillStyle = "red";
-            const metabaseHeight = (metabaseTotal / Math.max(totalMT5, metabaseTotal)) * maxHeight;
-            ctx.fillRect(350, 280 - metabaseHeight, barWidth, metabaseHeight);
+            const metabaseHeight = (totalMetabase / Math.max(totalMetabase, metabaseTotal)) * maxHeight;
+            ctx.fillRect(200, 280 - metabaseHeight, barWidth, metabaseHeight);
             
             // Draw labels
             ctx.fillStyle = "white";
-            ctx.fillText(`MT5: ${totalMT5.toFixed(2)}`, 200, 295);
-            ctx.fillText(`Metabase: ${metabaseTotal.toFixed(2)}`, 350, 295);
+            ctx.fillText(`Metabase: ${totalMetabase.toFixed(2)}`, 200, 295);
         }
 
         function resetFiles() {
             // Clear file inputs
-            document.getElementById('mt5Report').value = '';
             document.getElementById('metabaseReport').value = '';
             
-            // Reset the MT5 table while preserving headers
-            const mt5Table = document.getElementById('mt5Table');
-            mt5Table.innerHTML = `
-                <tr>
-                    <th colspan="2" style="width: 40%">MT5</th>
-                    <th colspan="2" style="width: 40%">Metabase</th>
-                    <th style="width: 20%">Discrepancies</th>
-                </tr>
-                <tr>
-                    <th style="width: 20%">Date</th>
-                    <th style="width: 20%">Commission</th>
-                    <th style="width: 20%">Date</th>
-                    <th style="width: 20%">Recalculated Commission</th>
-                    <th style="width: 20%">Difference</th>
-                </tr>
-            `;
-            
-            // Hide metabase table
-            document.getElementById('metabaseTable').style.display = 'none';
+            // Clear the right column
+            document.querySelector('.right-column').innerHTML = '';
             
             // Clear the summary results
             document.getElementById('summaryResults').innerHTML = '';
             
             // Reset any global variables
-            window.mt5CommissionData = null;
             window.metabaseCommissionData = null;
-            window.mt5Total = 0;
             window.metabaseTotal = 0;
+            window.tableData = null;
         }
 
         function removeFile(inputId) {
@@ -735,10 +674,7 @@
             fileInput.value = '';
             
             // Reset corresponding data
-            if (inputId === 'mt5Report') {
-                window.mt5CommissionData = null;
-                window.mt5Total = 0;
-            } else if (inputId === 'metabaseReport') {
+            if (inputId === 'metabaseReport') {
                 window.metabaseCommissionData = null;
                 window.metabaseTotal = 0;
             }
