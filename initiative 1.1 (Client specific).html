@@ -29,7 +29,7 @@
             flex-direction: column;
             gap: 20px;
         }
-        .left-column, .instruction-box, .right-column {
+        .upload-section, .instruction-box {
             background: #333;
             padding: 20px;
             border-radius: 8px;
@@ -37,6 +37,10 @@
         }
         .right-column {
             flex: 1;
+            background: #333;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
             min-height: 300px;
         }
         table {
@@ -58,18 +62,32 @@
         input[type="file"] {
             color: white;
         }
+        .tables-container {
+            max-width: 1400px;
+            margin: 20px auto;
+            display: flex;
+            gap: 20px;
+        }
+        .csv-section, .html-section {
+            flex: 1;
+            background: #333;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
     </style>
 </head>
 <body>
     <h1>Client Specific Analysis</h1>
     <h2>Use this tool to analyze client-specific data and metrics</h2>
     <div class="main-container">
-        <div class="left-column">
-            <h3>Upload CSV File</h3>
-            <input type="file" id="fileUpload" accept=".csv">
-            <h3>Upload HTML File</h3>
-    <input type="file" id="htmlFileUpload" accept=".html">
-        </div>
+        <div class="left-side">
+            <div class="upload-section">
+                <h3>Upload CSV File</h3>
+                <input type="file" id="fileUpload" accept=".csv">
+                <h3>Upload HTML File</h3>
+                <input type="file" id="htmlFileUpload" accept=".html">
+            </div>
             <div class="instruction-box">
                 <h3>Instructions</h3>
                 <ol>
@@ -78,10 +96,42 @@
                     <li>Ensure it contains columns: <strong>date_eod, login, symbol, recalc_ib_comm</strong>.</li>
                 </ol>
             </div>
+            <div class="empty-box">
+                <div style="height: 200px; background: #333; border-radius: 8px; padding: 20px;">
+                    <h3>Empty Box</h3>
+                    <!-- Empty box content -->
+                </div>
+            </div>
         </div>
         <div class="right-column">
+            <div class="empty-section">
+                <h3>Empty Column</h3>
+                <div style="height: 100%; min-height: 300px; background: #333; border-radius: 8px; padding: 20px;">
+                    <table style="width: 100%; margin-top: 10px;">
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Date Metabase</th>
+                                <th>Date MT5</th>
+                                <th>Symbol</th>
+                                <th>Type</th>
+                                <th>Metabase</th>
+                                <th>MT5</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Table data will populate here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="tables-container">
+        <div class="csv-section">
             <h3>CSV Data</h3>
-            <table id="dataTable">
+            <table id="csvDataTable">
                 <thead>
                     <tr>
                         <th>Date EOD</th>
@@ -95,9 +145,25 @@
                 </tbody>
             </table>
         </div>
+        <div class="html-section">
+            <h3>IB MT5 Report</h3>
+            <table id="htmlDataTable">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Type</th>
+                        <th>Profit</th>
+                        <th>Client MT5</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- HTML Data will populate here -->
+                </tbody>
+            </table>
+        </div>
     </div>
     <script>
-       // Existing CSV Upload Functionality (Your original CSV processing code remains unchanged)
+       // Existing CSV Upload Functionality
 document.getElementById("fileUpload").addEventListener("change", function(event) {
     const file = event.target.files[0];
     if (file) {
@@ -124,7 +190,7 @@ function parseCSV(csvText) {
         return;
     }
 
-    const tableBody = document.querySelector("#dataTable tbody");
+    const tableBody = document.querySelector("#csvDataTable tbody");
     tableBody.innerHTML = ""; // Clear previous data
 
     for (let i = 1; i < rows.length; i++) {
@@ -146,32 +212,12 @@ function parseCSV(csvText) {
         `;
         tableBody.appendChild(row);
     }
+
+    // Call comparison after CSV data is loaded
+    compareAndPopulateData();
 }
 
-function formatDate(dateStr) {
-    dateStr = dateStr.replace(/"/g, "").trim();
-    let parsedDate = new Date(dateStr);
-    if (!isNaN(parsedDate)) {
-        return parsedDate.toISOString().split("T")[0];
-    }
-
-    let match = dateStr.match(/^(\d{1,2})-([A-Za-z]+)-(\d{2,4})$/);
-    if (match) {
-        let [, day, month, year] = match;
-        const months = {
-            "jan": "01", "feb": "02", "mar": "03", "apr": "04", "may": "05", "jun": "06",
-            "jul": "07", "aug": "08", "sep": "09", "oct": "10", "nov": "11", "dec": "12"
-        };
-        month = month.toLowerCase().slice(0, 3);
-        if (!months[month]) return dateStr;
-        year = year.length === 2 ? `20${year}` : year;
-        return `${year}-${months[month]}-${day.padStart(2, "0")}`;
-    }
-    return dateStr;
-}
-
-// ======= New Code for HTML File Upload (Below CSV Handling) =======
-
+// HTML File Upload Functionality
 document.getElementById("htmlFileUpload").addEventListener("change", function(event) {
     const file = event.target.files[0];
     if (file) {
@@ -206,13 +252,17 @@ function parseHTML(htmlText) {
             let comment = cells[13]?.innerText.trim();
 
             if (type === "daily agent commission") {
+                // Format the time to YYYY-MM-DD
+                time = formatDate(time);
+                // Extract only the last number from comment
+                comment = comment.match(/\d+$/)?.[0] || comment;
                 extractedRows.push({ time, type, profit, comment });
             }
         }
     });
 
-    // Display the extracted data in the table
-    displayHTMLData(name, account, date, extractedRows);
+    // Display the extracted data in the HTML table
+    displayHTMLData(extractedRows);
 }
 
 /**
@@ -228,20 +278,9 @@ function extractValueFromTable(doc, label) {
     return null;
 }
 
-function displayHTMLData(name, account, date, extractedRows) {
-    let tableBody = document.querySelector("#dataTable tbody");
-
-    // Insert Separator Row
-    let separator = document.createElement("tr");
-    separator.innerHTML = `<td colspan="4" style="background-color:#444; color:#FFF; text-align:center;">HTML File Data</td>`;
-    tableBody.appendChild(separator);
-
-    // Insert extracted Name, Account, and Date
-    tableBody.innerHTML += `
-        <tr><td><strong>Name:</strong></td><td colspan="3">${name}</td></tr>
-        <tr><td><strong>Account:</strong></td><td colspan="3">${account}</td></tr>
-        <tr><td><strong>Date:</strong></td><td colspan="3">${date}</td></tr>
-    `;
+function displayHTMLData(extractedRows) {
+    let tableBody = document.querySelector("#htmlDataTable tbody");
+    tableBody.innerHTML = ""; // Clear previous data
 
     // Insert extracted "Deals" data
     extractedRows.forEach(row => {
@@ -249,36 +288,135 @@ function displayHTMLData(name, account, date, extractedRows) {
         newRow.innerHTML = `
             <td>${row.time}</td>
             <td>${row.type}</td>
-            <td></td>
             <td>${row.profit}</td>
             <td>${row.comment}</td>
         `;
         tableBody.appendChild(newRow);
     });
+
+    // Call comparison after HTML data is loaded
+    compareAndPopulateData();
 }
+
+function compareAndPopulateData() {
+    console.log("Starting comparison...");
+    
+    // Get data from both tables
+    const csvRows = Array.from(document.querySelector("#csvDataTable tbody").children);
+    const htmlRows = Array.from(document.querySelector("#htmlDataTable tbody").children);
+    
+    console.log("CSV Rows:", csvRows.length);
+    console.log("HTML Rows:", htmlRows.length);
+    
+    // Create arrays of CSV data
+    const csvDataArray = csvRows.map(row => ({
+        login: row.cells[1].textContent,
+        dateEOD: row.cells[0].textContent,
+        symbol: row.cells[2].textContent,
+        ibCommission: parseFloat(row.cells[3].textContent)
+    }));
+
+    // Create arrays of HTML data
+    const htmlDataArray = htmlRows.map(row => ({
+        clientMT5: row.cells[3].textContent,
+        time: row.cells[0].textContent,
+        type: row.cells[1].textContent,
+        profit: parseFloat(row.cells[2].textContent)
+    }));
+
+    // Create a Set of all CSV logins for quick lookup
+    const csvLogins = new Set(csvDataArray.map(data => data.login));
+
+    console.log("CSV Data Array:", csvDataArray);
+    console.log("HTML Data Array:", htmlDataArray);
+
+    // Get the empty column table body
+    const emptyTableBody = document.querySelector(".empty-section table tbody");
+    emptyTableBody.innerHTML = ""; // Clear previous data
+
+    // Create a Set to track processed HTML entries
+    const processedHtmlEntries = new Set();
+
+    // First, process CSV entries and find matches
+    csvDataArray.forEach(csvData => {
+        const matchingHtmlData = htmlDataArray.find(htmlData => 
+            csvData.login === htmlData.clientMT5 && 
+            Math.abs(csvData.ibCommission - htmlData.profit) < 0.01
+        );
+
+        if (matchingHtmlData) {
+            // Add matched entry
+            const newRow = document.createElement("tr");
+            newRow.innerHTML = `
+                <td>${csvData.login}</td>
+                <td>${csvData.dateEOD}</td>
+                <td>${matchingHtmlData.time}</td>
+                <td>${csvData.symbol}</td>
+                <td>${matchingHtmlData.type}</td>
+                <td>${csvData.ibCommission}</td>
+                <td>${matchingHtmlData.profit}</td>
+                <td>Match</td>
+            `;
+            emptyTableBody.appendChild(newRow);
+            processedHtmlEntries.add(matchingHtmlData.clientMT5);
+        } else {
+            // Add CSV entry with missing HTML data
+            const newRow = document.createElement("tr");
+            newRow.innerHTML = `
+                <td>${csvData.login}</td>
+                <td>${csvData.dateEOD}</td>
+                <td>-</td>
+                <td>${csvData.symbol}</td>
+                <td>-</td>
+                <td>${csvData.ibCommission}</td>
+                <td>-</td>
+                <td>Missing in MT5</td>
+            `;
+            emptyTableBody.appendChild(newRow);
+        }
+    });
+
+    // Then, process HTML entries that weren't matched but have matching CSV login
+    htmlDataArray.forEach(htmlData => {
+        if (!processedHtmlEntries.has(htmlData.clientMT5) && csvLogins.has(htmlData.clientMT5)) {
+            const newRow = document.createElement("tr");
+            newRow.innerHTML = `
+                <td>${htmlData.clientMT5}</td>
+                <td>-</td>
+                <td>${htmlData.time}</td>
+                <td>-</td>
+                <td>${htmlData.type}</td>
+                <td>-</td>
+                <td>${htmlData.profit}</td>
+                <td>Missing in CSV</td>
+            `;
+            emptyTableBody.appendChild(newRow);
+        }
+    });
+
+    console.log("Total entries in result table:", emptyTableBody.children.length);
+}
+
 function formatDate(dateStr) {
-    dateStr = dateStr.replace(/"/g, "").trim(); // Remove extra quotes and spaces
-    // Try parsing format like "January 5, 2025"
+    dateStr = dateStr.replace(/"/g, "").trim();
     let parsedDate = new Date(dateStr);
     if (!isNaN(parsedDate)) {
-        return parsedDate.toISOString().split("T")[0]; // Converts to YYYY-MM-DD
+        return parsedDate.toISOString().split("T")[0];
     }
-    // If format is "5-Jan-25" or "5-Jan-2025"
+
     let match = dateStr.match(/^(\d{1,2})-([A-Za-z]+)-(\d{2,4})$/);
     if (match) {
         let [, day, month, year] = match;
-        // Convert month name to number
         const months = {
             "jan": "01", "feb": "02", "mar": "03", "apr": "04", "may": "05", "jun": "06",
             "jul": "07", "aug": "08", "sep": "09", "oct": "10", "nov": "11", "dec": "12"
         };
         month = month.toLowerCase().slice(0, 3);
-        if (!months[month]) return dateStr; // Return unchanged if month failed
-        // Convert short year format (YY) to full (YYYY)
+        if (!months[month]) return dateStr;
         year = year.length === 2 ? `20${year}` : year;
         return `${year}-${months[month]}-${day.padStart(2, "0")}`;
     }
-    return dateStr; // Return unchanged if no format matched
+    return dateStr;
 }
     </script>
 </body>
