@@ -63,13 +63,13 @@
 <body>
     <h1>Client Specific Analysis</h1>
     <h2>Use this tool to analyze client-specific data and metrics</h2>
-
     <div class="main-container">
-        <div class="left-side">
-            <div class="left-column">
-                <h3>Upload CSV File</h3>
-                <input type="file" id="fileUpload" accept=".csv">
-            </div>
+        <div class="left-column">
+            <h3>Upload CSV File</h3>
+            <input type="file" id="fileUpload" accept=".csv">
+            <h3>Upload HTML File</h3>
+    <input type="file" id="htmlFileUpload" accept=".html">
+        </div>
             <div class="instruction-box">
                 <h3>Instructions</h3>
                 <ol>
@@ -79,7 +79,6 @@
                 </ol>
             </div>
         </div>
-
         <div class="right-column">
             <h3>CSV Data</h3>
             <table id="dataTable">
@@ -97,9 +96,9 @@
             </table>
         </div>
     </div>
-
     <script>
-        document.getElementById("fileUpload").addEventListener("change", function(event) {
+       // Existing CSV Upload Functionality (Your original CSV processing code remains unchanged)
+document.getElementById("fileUpload").addEventListener("change", function(event) {
     const file = event.target.files[0];
     if (file) {
         const reader = new FileReader();
@@ -112,8 +111,8 @@
 });
 
 function parseCSV(csvText) {
-    const rows = csvText.split("\n").map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)); // Handle commas inside quotes
-    const headers = rows[0].map(h => h.trim().replace(/"/g, "").toLowerCase()); // Normalize column names
+    const rows = csvText.split("\n").map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
+    const headers = rows[0].map(h => h.trim().replace(/"/g, "").toLowerCase());
 
     const dateIndex = headers.indexOf("date_eod");
     const loginIndex = headers.indexOf("login");
@@ -129,15 +128,13 @@ function parseCSV(csvText) {
     tableBody.innerHTML = ""; // Clear previous data
 
     for (let i = 1; i < rows.length; i++) {
-        if (rows[i].length < headers.length) continue; // Skip incomplete rows
+        if (rows[i].length < headers.length) continue;
 
-        // Clean and format data properly
         let dateValue = formatDate(rows[i][dateIndex]);
-        const loginValue = rows[i][loginIndex].replace(/"/g, "").replace(/,/g, "");  // Remove commas
+        const loginValue = rows[i][loginIndex].replace(/"/g, "").replace(/,/g, "").trim();
         const symbolValue = rows[i][symbolIndex].replace(/"/g, "").trim();
         let commissionValue = rows[i][commissionIndex].replace(/"/g, "").trim();
-
-        // Convert IB Commission to float, then round to 2 decimals
+        
         commissionValue = parseFloat(commissionValue).toFixed(2);
 
         const row = document.createElement("tr");
@@ -147,39 +144,140 @@ function parseCSV(csvText) {
             <td>${symbolValue}</td>
             <td>${commissionValue}</td>
         `;
-
         tableBody.appendChild(row);
     }
 }
 
 function formatDate(dateStr) {
-    dateStr = dateStr.replace(/"/g, "").trim(); // Remove extra quotes and spaces
+    dateStr = dateStr.replace(/"/g, "").trim();
+    let parsedDate = new Date(dateStr);
+    if (!isNaN(parsedDate)) {
+        return parsedDate.toISOString().split("T")[0];
+    }
 
+    let match = dateStr.match(/^(\d{1,2})-([A-Za-z]+)-(\d{2,4})$/);
+    if (match) {
+        let [, day, month, year] = match;
+        const months = {
+            "jan": "01", "feb": "02", "mar": "03", "apr": "04", "may": "05", "jun": "06",
+            "jul": "07", "aug": "08", "sep": "09", "oct": "10", "nov": "11", "dec": "12"
+        };
+        month = month.toLowerCase().slice(0, 3);
+        if (!months[month]) return dateStr;
+        year = year.length === 2 ? `20${year}` : year;
+        return `${year}-${months[month]}-${day.padStart(2, "0")}`;
+    }
+    return dateStr;
+}
+
+// ======= New Code for HTML File Upload (Below CSV Handling) =======
+
+document.getElementById("htmlFileUpload").addEventListener("change", function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const htmlText = e.target.result;
+            parseHTML(htmlText);
+        };
+        reader.readAsText(file);
+    }
+});
+
+function parseHTML(htmlText) {
+    let parser = new DOMParser();
+    let doc = parser.parseFromString(htmlText, "text/html");
+
+    // Getting Name, Account, and Date from the HTML Table
+    let name = extractValueFromTable(doc, "Name") || "N/A";
+    let account = extractValueFromTable(doc, "Account") || "N/A";
+    let date = extractValueFromTable(doc, "Date") || "N/A";
+
+    // Extracting specific deals where Type = "daily agent commission"
+    let extractedRows = [];
+    let rows = doc.querySelectorAll("tr");
+
+    rows.forEach(row => {
+        let cells = row.querySelectorAll("td");
+        if (cells.length > 4) {  // Ensure it has enough columns
+            let time = cells[0]?.innerText.trim();
+            let type = cells[3]?.innerText.trim();
+            let profit = cells[11]?.innerText.trim();
+            let comment = cells[13]?.innerText.trim();
+
+            if (type === "daily agent commission") {
+                extractedRows.push({ time, type, profit, comment });
+            }
+        }
+    });
+
+    // Display the extracted data in the table
+    displayHTMLData(name, account, date, extractedRows);
+}
+
+/**
+ * Extracts a value from a table based on the label (like "Name", "Account", "Date")
+ */
+function extractValueFromTable(doc, label) {
+    let cells = doc.querySelectorAll("td");
+    for (let i = 0; i < cells.length; i++) {
+        if (cells[i].innerText.trim().toLowerCase() === label.toLowerCase()) {
+            return cells[i + 1]?.innerText.trim(); // Return the value from the next column
+        }
+    }
+    return null;
+}
+
+function displayHTMLData(name, account, date, extractedRows) {
+    let tableBody = document.querySelector("#dataTable tbody");
+
+    // Insert Separator Row
+    let separator = document.createElement("tr");
+    separator.innerHTML = `<td colspan="4" style="background-color:#444; color:#FFF; text-align:center;">HTML File Data</td>`;
+    tableBody.appendChild(separator);
+
+    // Insert extracted Name, Account, and Date
+    tableBody.innerHTML += `
+        <tr><td><strong>Name:</strong></td><td colspan="3">${name}</td></tr>
+        <tr><td><strong>Account:</strong></td><td colspan="3">${account}</td></tr>
+        <tr><td><strong>Date:</strong></td><td colspan="3">${date}</td></tr>
+    `;
+
+    // Insert extracted "Deals" data
+    extractedRows.forEach(row => {
+        let newRow = document.createElement("tr");
+        newRow.innerHTML = `
+            <td>${row.time}</td>
+            <td>${row.type}</td>
+            <td></td>
+            <td>${row.profit}</td>
+            <td>${row.comment}</td>
+        `;
+        tableBody.appendChild(newRow);
+    });
+}
+function formatDate(dateStr) {
+    dateStr = dateStr.replace(/"/g, "").trim(); // Remove extra quotes and spaces
     // Try parsing format like "January 5, 2025"
     let parsedDate = new Date(dateStr);
     if (!isNaN(parsedDate)) {
         return parsedDate.toISOString().split("T")[0]; // Converts to YYYY-MM-DD
     }
-
     // If format is "5-Jan-25" or "5-Jan-2025"
     let match = dateStr.match(/^(\d{1,2})-([A-Za-z]+)-(\d{2,4})$/);
     if (match) {
         let [, day, month, year] = match;
-
         // Convert month name to number
         const months = {
-            "jan": "01", "feb": "02", "mar": "03", "apr": "04", "may": "05", "jun": "06", 
+            "jan": "01", "feb": "02", "mar": "03", "apr": "04", "may": "05", "jun": "06",
             "jul": "07", "aug": "08", "sep": "09", "oct": "10", "nov": "11", "dec": "12"
         };
         month = month.toLowerCase().slice(0, 3);
         if (!months[month]) return dateStr; // Return unchanged if month failed
-
         // Convert short year format (YY) to full (YYYY)
         year = year.length === 2 ? `20${year}` : year;
-
         return `${year}-${months[month]}-${day.padStart(2, "0")}`;
     }
-
     return dateStr; // Return unchanged if no format matched
 }
     </script>
