@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Specific Analysis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: #ddd;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #fff;
+            text-align: left;
+        }
+        .main-container {
+            display: flex;
+            gap: 20px;
+            max-width: 1400px;
+            margin: auto;
+            margin-top: 20px;
+        }
+        .left-side {
+            flex: 0 0 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .left-column, .instruction-box, .right-column {
+            background: #333;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+        .right-column {
+            flex: 1;
+            min-height: 300px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table, th, td {
+            border: 1px solid #555;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #444;
+            color: white;
+        }
+        input[type="file"] {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Client Specific Analysis</h1>
+    <h2>Use this tool to analyze client-specific data and metrics</h2>
+
+    <div class="main-container">
+        <div class="left-side">
+            <div class="left-column">
+                <h3>Upload CSV File</h3>
+                <input type="file" id="fileUpload" accept=".csv">
+            </div>
+            <div class="instruction-box">
+                <h3>Instructions</h3>
+                <ol>
+                    <li>Select a CSV file to upload.</li>
+                    <li>The file will display in the table.</li>
+                    <li>Ensure it contains columns: <strong>date_eod, login, symbol, recalc_ib_comm</strong>.</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <h3>CSV Data</h3>
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Date EOD</th>
+                        <th>Login</th>
+                        <th>Symbol</th>
+                        <th>IB Commission</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- CSV Data will populate here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("fileUpload").addEventListener("change", function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            parseCSV(text);
+        };
+        reader.readAsText(file);
+    }
+});
+
+function parseCSV(csvText) {
+    const rows = csvText.split("\n").map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)); // Handle commas inside quotes
+    const headers = rows[0].map(h => h.trim().replace(/"/g, "").toLowerCase()); // Normalize column names
+
+    const dateIndex = headers.indexOf("date_eod");
+    const loginIndex = headers.indexOf("login");
+    const symbolIndex = headers.indexOf("symbol");
+    const commissionIndex = headers.indexOf("recalc_ib_comm");
+
+    if (dateIndex === -1 || loginIndex === -1 || symbolIndex === -1 || commissionIndex === -1) {
+        alert("CSV file is missing required columns.");
+        return;
+    }
+
+    const tableBody = document.querySelector("#dataTable tbody");
+    tableBody.innerHTML = ""; // Clear previous data
+
+    for (let i = 1; i < rows.length; i++) {
+        if (rows[i].length < headers.length) continue; // Skip incomplete rows
+
+        // Clean and format data properly
+        let dateValue = formatDate(rows[i][dateIndex]);
+        const loginValue = rows[i][loginIndex].replace(/"/g, "").replace(/,/g, "");  // Remove commas
+        const symbolValue = rows[i][symbolIndex].replace(/"/g, "").trim();
+        let commissionValue = rows[i][commissionIndex].replace(/"/g, "").trim();
+
+        // Convert IB Commission to float, then round to 2 decimals
+        commissionValue = parseFloat(commissionValue).toFixed(2);
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${dateValue}</td>
+            <td>${loginValue}</td>
+            <td>${symbolValue}</td>
+            <td>${commissionValue}</td>
+        `;
+
+        tableBody.appendChild(row);
+    }
+}
+
+function formatDate(dateStr) {
+    dateStr = dateStr.replace(/"/g, "").trim(); // Remove extra quotes and spaces
+
+    // Try parsing format like "January 5, 2025"
+    let parsedDate = new Date(dateStr);
+    if (!isNaN(parsedDate)) {
+        return parsedDate.toISOString().split("T")[0]; // Converts to YYYY-MM-DD
+    }
+
+    // If format is "5-Jan-25" or "5-Jan-2025"
+    let match = dateStr.match(/^(\d{1,2})-([A-Za-z]+)-(\d{2,4})$/);
+    if (match) {
+        let [, day, month, year] = match;
+
+        // Convert month name to number
+        const months = {
+            "jan": "01", "feb": "02", "mar": "03", "apr": "04", "may": "05", "jun": "06", 
+            "jul": "07", "aug": "08", "sep": "09", "oct": "10", "nov": "11", "dec": "12"
+        };
+        month = month.toLowerCase().slice(0, 3);
+        if (!months[month]) return dateStr; // Return unchanged if month failed
+
+        // Convert short year format (YY) to full (YYYY)
+        year = year.length === 2 ? `20${year}` : year;
+
+        return `${year}-${months[month]}-${day.padStart(2, "0")}`;
+    }
+
+    return dateStr; // Return unchanged if no format matched
+}
+    </script>
+</body>
+</html>
