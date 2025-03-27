@@ -400,7 +400,10 @@
                     <label for="metabaseReport">Metabase Report (CSV)</label>
                     <div class="file-input-group">
                         <input type="file" id="metabaseReport" accept=".csv">
-                        <button class="remove-file-btn" onclick="removeFile('metabaseReport')">Remove</button>
+                        <button class="remove-file-btn" onclick="resetFiles()">Reset</button>
+                    </div>
+                    <div style="margin-top: 10px; padding: 8px; background: #444; border-radius: 4px; color: #bbb;">
+                        Uploaded file: <span id="uploadedFileName">No file uploaded</span>
                     </div>
 
                     <div class="button-group">
@@ -477,6 +480,25 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="table-wrapper" style="margin-top: 20px;">
+                        <h3>Server Statistics</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Server</th>
+                                    <th>IB Account Type</th>
+                                    <th>Total Commission</th>
+                                    <th>Transferred</th>
+                                    <th>Not Transferred</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: #888;">No data available</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                     <h3 style="margin-top: 20px;">Results</h3>
                     <div class="table-wrapper">
                         <h3>Commission Summary</h3>
@@ -528,6 +550,13 @@
 
         document.getElementById('metabaseReport').addEventListener('change', function(event) {
             const file = event.target.files[0];
+            // Update the file name display
+            const fileNameDisplay = document.getElementById('uploadedFileName');
+            if (file) {
+                fileNameDisplay.textContent = file.name;
+            } else {
+                fileNameDisplay.textContent = 'No file uploaded';
+            }
             readMetabaseFile(file);
         });
 
@@ -697,6 +726,15 @@
             const mainAccountCommissions = window.mainAccountCommissions || {};
             const totalCommission = window.metabaseTotal || 0;
 
+            // Update the file name display with AFF Main MT5 value
+            const fileNameDisplay = document.getElementById('uploadedFileName');
+            const mainAccountMT5s = Object.keys(mainAccountCommissions);
+            if (mainAccountMT5s.length > 0) {
+                fileNameDisplay.textContent = mainAccountMT5s.join(', ');
+            } else {
+                fileNameDisplay.textContent = 'No AFF Main MT5 available';
+            }
+
             // Count unique deals
             const uniqueDeals = new Set(tableData.map(row => row.Deal_ID)).size;
 
@@ -729,7 +767,6 @@
             `;
 
             // Add main account MT5s
-            const mainAccountMT5s = Object.keys(mainAccountCommissions);
             if (mainAccountMT5s.length > 0) {
                 mainAccountMT5s.forEach(mt5 => {
                     tableHTML += `
@@ -782,6 +819,86 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="table-wrapper" style="margin-top: 20px;">
+                        <h3>Server Statistics</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Server</th>
+                                    <th>IB Account Type</th>
+                                    <th>Total Commission</th>
+                                    <th>Transferred</th>
+                                    <th>Not Transferred</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            // Calculate server-wise statistics
+            const serverStats = {};
+            
+            // First, initialize stats for all servers from tableData
+            tableData.forEach(row => {
+                if (!serverStats[row.Server]) {
+                    serverStats[row.Server] = {
+                        totalCommission: 0,
+                        transferred: 0,
+                        notTransferred: 0,
+                        ibAccountType: row.IB_account_type // Add IB Account Type
+                    };
+                }
+                serverStats[row.Server].totalCommission += parseFloat(row.Commission);
+            });
+
+            // Create a map of transferred deals
+            const transferredDeals = new Map();
+            tableData.forEach(row => {
+                if (row.Commission_Type === 'IBT to main') {
+                    // Extract deal ID from MT5 Comment
+                    const dealMatch = row.MT5_Comment.match(/deal (\d+)/);
+                    if (dealMatch && dealMatch[1]) {
+                        transferredDeals.set(dealMatch[1], parseFloat(row.Commission));
+                    }
+                }
+            });
+
+            // Update transfer status counts and amounts
+            tableData.forEach(row => {
+                if (row.IB_account_type === 'technical') {
+                    const dealId = row.Deal_ID;
+                    if (transferredDeals.has(dealId)) {
+                        serverStats[row.Server].transferred += transferredDeals.get(dealId);
+                    } else {
+                        serverStats[row.Server].notTransferred += parseFloat(row.Commission);
+                    }
+                }
+            });
+
+            // Add server-wise statistics to the table
+            if (Object.keys(serverStats).length > 0) {
+                Object.entries(serverStats).forEach(([server, stats]) => {
+                    tableHTML += `
+                        <tr>
+                            <td>${server}</td>
+                            <td>${stats.ibAccountType || '-'}</td>
+                            <td>${stats.totalCommission.toFixed(2)}</td>
+                            <td>${stats.transferred.toFixed(2)}</td>
+                            <td style="color: #ff4444">${stats.notTransferred.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tableHTML += `
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #888;">No data available</td>
+                    </tr>
+                `;
+            }
+
+            tableHTML += `
+                            </tbody>
+                        </table>
+                    </div>
                     <h3 style="margin-top: 20px;">Results</h3>
                     <div class="table-wrapper">
                         <h3>Commission Summary</h3>
@@ -803,8 +920,26 @@
 
             // Add transfer status rows
             Object.entries(transferStatus).forEach(([dealId, status]) => {
+                // Get current date and yesterday's date
+                const today = new Date();
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                // Format dates for comparison
+                const todayStr = today.toISOString().split('T')[0];
+                const yesterdayStr = yesterday.toISOString().split('T')[0];
+                
                 // Only show Not Transferred entries
                 if (!status.transferred) {
+                    let statusText = 'Not Transferred';
+                    let statusColor = '#ff4444';
+                    
+                    // Check if the technical date is yesterday
+                    if (status.technicalDate === yesterdayStr) {
+                        statusText = 'Pending';
+                        statusColor = '#ffd700'; // Yellow color
+                    }
+                    
                     tableHTML += `
                         <tr>
                             <td>${dealId}</td>
@@ -814,7 +949,7 @@
                             <td>${status.mainAccount || '-'}</td>
                             <td>${status.mainDate || '-'}</td>
                             <td>${status.commission.toFixed(2)}</td>
-                            <td style="color: #ff4444">Not Transferred</td>
+                            <td style="color: ${statusColor}">${statusText}</td>
                         </tr>
                     `;
                 }
@@ -900,7 +1035,10 @@
                     <label for="metabaseReport">Metabase Report (CSV)</label>
                     <div class="file-input-group">
                         <input type="file" id="metabaseReport" accept=".csv">
-                        <button class="remove-file-btn" onclick="removeFile('metabaseReport')">Remove</button>
+                        <button class="remove-file-btn" onclick="resetFiles()">Reset</button>
+                    </div>
+                    <div style="margin-top: 10px; padding: 8px; background: #444; border-radius: 4px; color: #bbb;">
+                        Uploaded file: <span id="uploadedFileName">No file uploaded</span>
                     </div>
 
                     <div class="button-group">
@@ -921,6 +1059,9 @@
         function resetFiles() {
             // Clear file inputs
             document.getElementById('metabaseReport').value = '';
+            
+            // Reset the file name display
+            document.getElementById('uploadedFileName').textContent = 'No AFF Main MT5 available';
             
             // Reset any global variables
             window.metabaseCommissionData = null;
@@ -966,6 +1107,25 @@
                             <tbody>
                                 <tr>
                                     <td colspan="3" style="text-align: center; color: #888;">No data available</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-wrapper" style="margin-top: 20px;">
+                        <h3>Server Statistics</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Server</th>
+                                    <th>IB Account Type</th>
+                                    <th>Total Commission</th>
+                                    <th>Transferred</th>
+                                    <th>Not Transferred</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: #888;">No data available</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -1027,7 +1187,10 @@
                     <label for="metabaseReport">Metabase Report (CSV)</label>
                     <div class="file-input-group">
                         <input type="file" id="metabaseReport" accept=".csv">
-                        <button class="remove-file-btn" onclick="removeFile('metabaseReport')">Remove</button>
+                        <button class="remove-file-btn" onclick="resetFiles()">Reset</button>
+                    </div>
+                    <div style="margin-top: 10px; padding: 8px; background: #444; border-radius: 4px; color: #bbb;">
+                        Uploaded file: <span id="uploadedFileName">No file uploaded</span>
                     </div>
 
                     <div class="button-group">
@@ -1036,30 +1199,6 @@
                     </div>
                 </div>
             `;
-
-            // Reattach the event listener for the file input
-            document.getElementById('metabaseReport').addEventListener('change', function(event) {
-                const file = event.target.files[0];
-                readMetabaseFile(file);
-            });
-        }
-
-        function removeFile(inputId) {
-            const fileInput = document.getElementById(inputId);
-            fileInput.value = '';
-            
-            // Reset corresponding data
-            if (inputId === 'metabaseReport') {
-                window.metabaseCommissionData = null;
-                window.metabaseTotal = 0;
-                window.tableData = null;
-                window.transferStatus = null;
-                window.mainAccountCommissions = null;
-            }
-            
-            // Update the display
-            updateSummaryAndTable();
-            displayDataTable();
         }
     </script>
 
