@@ -380,6 +380,33 @@
             font-size: 24px;
             font-weight: bold;
         }
+
+        /* Hide the 'No file chosen' text by matching its color to the background */
+        input[type="file"]::-webkit-file-upload-button {
+            visibility: hidden;
+        }
+        input[type="file"]::before {
+            content: 'Upload';
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        input[type="file"]:hover::before {
+            background-color: #45a049;
+        }
+
+        /* Add a label to display the uploaded file name */
+        .file-name {
+            color: #ddd;
+            margin-top: 5px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -401,6 +428,7 @@
                     <div class="file-input-group">
                         <input type="file" id="metabaseReport" accept=".csv">
                         <button class="remove-file-btn" onclick="removeFile('metabaseReport')">Remove</button>
+                        <span id="metabaseReportName" class="file-name"></span>
                     </div>
 
                     <div class="button-group">
@@ -431,6 +459,11 @@
     <!-- Move canvas outside or remove if not needed -->
     <canvas id="comparisonChart" style="display: none;"></canvas>
 
+    <!-- Add a new container for displaying the file name -->
+    <div class="file-name-box" style="margin-top: 10px; padding: 10px; background: #333; border-radius: 4px; display: none;">
+        <strong>File uploaded:</strong> <span id="fileNameDisplay" style="color: #4CAF50;"></span>
+    </div>
+
     <script>
         let mt5Data = [];
         let metabaseData = [];
@@ -441,7 +474,10 @@
             rightColumn.innerHTML = `
                 <div class="top-rectangle">
                     <div style="margin-bottom: 20px; padding: 15px; background: #444; border-radius: 4px;">
-                        <h3 style="margin: 0 0 10px 0;">AFF Main MT5</h3>
+                        <h3 style="margin: 0 0 10px 0; display: flex; justify-content: space-between; align-items: center;">
+                            AFF Main MT5
+                            <span id="fileNameDisplay" style="color: #4CAF50; font-size: 14px;"></span>
+                        </h3>
                         <div style="display: flex; flex-wrap: wrap; gap: 10px;">
                             <div style="color: #888;">No main account MT5s available</div>
                         </div>
@@ -525,7 +561,9 @@
             `;
         });
 
-        document.getElementById('metabaseReport').addEventListener('change', function(event) {
+        const fileInput = document.getElementById('metabaseReport');
+        fileInput.addEventListener('change', function(event) {
+            updateFileName('metabaseReport');
             const file = event.target.files[0];
             readMetabaseFile(file);
         });
@@ -894,6 +932,7 @@
                     <div class="file-input-group">
                         <input type="file" id="metabaseReport" accept=".csv">
                         <button class="remove-file-btn" onclick="removeFile('metabaseReport')">Remove</button>
+                        <span id="metabaseReportName" class="file-name"></span>
                     </div>
 
                     <div class="button-group">
@@ -905,7 +944,8 @@
             `;
 
             // Reattach the event listener for the file input
-            document.getElementById('metabaseReport').addEventListener('change', function(event) {
+            const fileInput = document.getElementById('metabaseReport');
+            fileInput.addEventListener('change', function(event) {
                 const file = event.target.files[0];
                 readMetabaseFile(file);
             });
@@ -1020,6 +1060,7 @@
                     <div class="file-input-group">
                         <input type="file" id="metabaseReport" accept=".csv">
                         <button class="remove-file-btn" onclick="removeFile('metabaseReport')">Remove</button>
+                        <span id="metabaseReportName" class="file-name"></span>
                     </div>
 
                     <div class="button-group">
@@ -1030,7 +1071,8 @@
             `;
 
             // Reattach the event listener for the file input
-            document.getElementById('metabaseReport').addEventListener('change', function(event) {
+            const fileInput = document.getElementById('metabaseReport');
+            fileInput.addEventListener('change', function(event) {
                 const file = event.target.files[0];
                 readMetabaseFile(file);
             });
@@ -1052,6 +1094,17 @@
             // Update the display
             updateSummaryAndTable();
             displayDataTable();
+        }
+
+        // Update the JavaScript to display the file name in the new placeholder
+        function updateFileName(inputId) {
+            const fileInput = document.getElementById(inputId);
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            if (fileInput.files.length > 0) {
+                fileNameDisplay.textContent = 'File uploaded: ' + fileInput.files[0].name;
+            } else {
+                fileNameDisplay.textContent = '';
+            }
         }
     </script>
 
