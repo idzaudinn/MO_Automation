@@ -412,7 +412,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- Lower Left Section - Instructions -->
             <div class="instruction-box">
                 <h3>Instructions</h3>
@@ -481,7 +480,7 @@
                         </table>
                     </div>
                     <div class="table-wrapper" style="margin-top: 20px;">
-                        <h3>Server Statistics</h3>
+                        <h3>Technical Transfer Summary</h3>
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -820,7 +819,7 @@
                         </table>
                     </div>
                     <div class="table-wrapper" style="margin-top: 20px;">
-                        <h3>Server Statistics</h3>
+                        <h3>Technical Transfer Summary</h3>
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -1061,7 +1060,7 @@
             document.getElementById('metabaseReport').value = '';
             
             // Reset the file name display
-            document.getElementById('uploadedFileName').textContent = 'No AFF Main MT5 available';
+            document.getElementById('uploadedFileName').textContent = 'No file uploaded';
             
             // Reset any global variables
             window.metabaseCommissionData = null;
@@ -1081,78 +1080,27 @@
                         </div>
                     </div>
                     <h3>Transfer Summary</h3>
-                    <div class="table-wrapper" style="display: flex; gap: 20px;">
-                        <table class="data-table" style="margin-top: 0; flex: 1;">
-                            <thead>
-                                <tr>
-                                    <th>Technical Transfer</th>
-                                    <th>Transferred</th>
-                                    <th>Not Transferred</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="3" style="text-align: center; color: #888;">No data available</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <table class="data-table" style="margin-top: 0; flex: 1;">
-                            <thead>
-                                <tr>
-                                    <th>EOD Total</th>
-                                    <th>Main Total</th>
-                                    <th>Not Transferred Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="3" style="text-align: center; color: #888;">No data available</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="table-wrapper" style="margin-top: 20px;">
-                        <h3>Server Statistics</h3>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Server</th>
-                                    <th>IB Account Type</th>
-                                    <th>Total Commission</th>
-                                    <th>Transferred</th>
-                                    <th>Not Transferred</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="5" style="text-align: center; color: #888;">No data available</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <h3 style="margin-top: 20px;">Results</h3>
-                    <div class="table-wrapper">
-                        <h3>Commission Summary</h3>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Deal ID</th>
-                                    <th>Server</th>
-                                    <th>Technical Account</th>
-                                    <th>Technical Date</th>
-                                    <th>Main Account</th>
-                                    <th>Main Date</th>
-                                    <th>Commission</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="8" style="text-align: center; color: #888;">No data available</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Count</th>
+                                <th>Commission</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Transferred</td>
+                                <td>0</td>
+                                <td>0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Not Transferred</td>
+                                <td>0</td>
+                                <td>0.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
                 <div class="table-wrapper">
                     <h3>Fetched Data</h3>
@@ -1163,7 +1111,6 @@
                                 <th>Affiliate MT5</th>
                                 <th>Deal ID</th>
                                 <th>IB Account Type</th>
-                                <th>Server</th>
                                 <th>Commission</th>
                                 <th>MT5 Comment</th>
                                 <th>Commission Type</th>
@@ -1171,7 +1118,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td colspan="8" style="text-align: center; color: #888;">No data available</td>
+                                <td colspan="7" style="text-align: center; color: #888;">No data available</td>
                             </tr>
                         </tbody>
                     </table>
@@ -1199,6 +1146,15 @@
                     </div>
                 </div>
             `;
+
+            // Reattach the event listener for the file input
+            document.getElementById('metabaseReport').addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    document.getElementById('uploadedFileName').textContent = file.name;
+                    readMetabaseFile(file);
+                }
+            });
         }
     </script>
 
