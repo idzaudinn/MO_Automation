@@ -851,9 +851,9 @@
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>${technicalTransferCount}</td>
-                                    <td>${transferredCount}</td>
-                                    <td style="color: ${notTransferredCount > 0 ? '#ff4444' : '#4CAF50'}">${notTransferredCount}</td>
+                                    <td>${technicalTransferCount.toLocaleString()}</td>
+                                    <td>${transferredCount.toLocaleString()}</td>
+                                    <td style="color: ${notTransferredCount > 0 ? '#ff4444' : '#4CAF50'}">${notTransferredCount.toLocaleString()}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -867,9 +867,9 @@
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>${eodTotal.toFixed(2)}</td>
-                                    <td>${adjustedMainTotal.toFixed(2)}</td>
-                                    <td style="color: ${notTransferredAmount > 0 ? '#ff4444' : '#4CAF50'}">${notTransferredAmount.toFixed(2)}</td>
+                                    <td>$${eodTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                    <td>$${adjustedMainTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                    <td style="color: ${notTransferredAmount > 0 ? '#ff4444' : '#4CAF50'}">$${notTransferredAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -967,9 +967,9 @@ console.log("⚠️ Unmatched Main Transfers (not linked to any technical deal):
                         <tr>
                             <td>${server}</td>
                             <td>${stats.ibAccountType || '-'}</td>
-                            <td>${stats.totalCommission.toFixed(2)}</td>
-                            <td>${stats.transferred.toFixed(2)}</td>
-                            <td style="color: ${stats.notTransferred > 0 ? '#ff4444' : '#4CAF50'}">${stats.notTransferred.toFixed(2)}</td>
+                            <td>$${stats.totalCommission.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td>$${stats.transferred.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td style="color: ${stats.notTransferred > 0 ? '#ff4444' : '#4CAF50'}">$${stats.notTransferred.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         </tr>
                     `;
                 });
