@@ -757,7 +757,7 @@
 
             // Calculate EOD to Tech
             const eodTotal = tableData
-                .filter(row => row.Commission_Type === 'EOD')
+                .filter(row => row.Commission_Type === 'EOD' && row.IB_account_type === 'technical')
                 .reduce((sum, row) => sum + parseFloat(row.Commission), 0);
 
             // Calculate Main Transfer
@@ -800,6 +800,54 @@
                 .filter(row => row.Commission_Type === 'IBT to main')
                 .reduce((sum, row) => sum + parseFloat(row.Commission), 0);
 
+            // Calculate server-wise statistics
+            const serverStats = {};
+            
+            // First, initialize stats for all servers from tableData
+            tableData.forEach(row => {
+                if (!serverStats[row.Server]) {
+                    serverStats[row.Server] = {
+                        totalCommission: 0,
+                        transferred: 0,
+                        notTransferred: 0,
+                        ibAccountType: row.IB_account_type // Add IB Account Type
+                    };
+                }
+                serverStats[row.Server].totalCommission += parseFloat(row.Commission);
+            });
+
+            // Create a map of transferred deals
+            const transferredDeals = new Map();
+            tableData.forEach(row => {
+                if (row.Commission_Type === 'IBT to main') {
+                    // Extract deal ID from MT5 Comment
+                    const dealMatch = row.MT5_Comment.match(/deal (\d+)/);
+                    if (dealMatch && dealMatch[1]) {
+                        transferredDeals.set(dealMatch[1], parseFloat(row.Commission));
+                    }
+                }
+            });
+
+            // Update transfer status counts and amounts
+            tableData.forEach(row => {
+                if (row.IB_account_type === 'technical') {
+                    const dealId = row.Deal_ID;
+                    if (transferredDeals.has(dealId)) {
+                        serverStats[row.Server].transferred += transferredDeals.get(dealId);
+                    } else {
+                        serverStats[row.Server].notTransferred += parseFloat(row.Commission);
+                    }
+                }
+            });
+
+            // Calculate total commission for Main accounts from Technical Transfer Summary
+            const mainAccountTotalCommission = Object.values(serverStats)
+                .filter(stats => stats.ibAccountType === 'main')
+                .reduce((sum, stats) => sum + stats.totalCommission, 0);
+
+            // Calculate total of Main account commissions and successful transfers
+            const totalMainAndTransfers = mainAccountTotalCommission + adjustedMainTotal;
+
             let tableHTML = `
                 <div class="top-rectangle">
                     <div style="margin-bottom: 20px; padding: 15px; background: #444; border-radius: 4px;">
@@ -833,6 +881,9 @@
                             </div>
                             <div>
                                 From an end-of-day (EOD), the total amount to be transferred to technical accounts was $${eodTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}. Out of this, $${adjustedMainTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} has been successfully transferred to main, with $${notTransferredAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} still pending.
+                            </div>
+                            <div>
+                                The total Main and successful transfer ($${mainAccountTotalCommission.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} + $${adjustedMainTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}) = $${totalMainAndTransfers.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                             </div>
                             <div style="color: ${eodTotal !== adjustedMainTotal ? '#ff4444' : '#4CAF50'}">
                                 ${eodTotal === adjustedMainTotal ? 'The EOD and Main Transfer amounts are balanced.' : 'Warning: The EOD and Main Transfer amounts are unbalanced.'}
@@ -888,77 +939,6 @@
                             </thead>
                             <tbody>
             `;
-
-            // Calculate server-wise statistics
-            const serverStats = {};
-            
-            // First, initialize stats for all servers from tableData
-            tableData.forEach(row => {
-                if (!serverStats[row.Server]) {
-                    serverStats[row.Server] = {
-                        totalCommission: 0,
-                        transferred: 0,
-                        notTransferred: 0,
-                        ibAccountType: row.IB_account_type // Add IB Account Type
-                    };
-                }
-                serverStats[row.Server].totalCommission += parseFloat(row.Commission);
-            });
-
-            // Create a map of transferred deals
-            const transferredDeals = new Map();
-            tableData.forEach(row => {
-                if (row.Commission_Type === 'IBT to main') {
-                    // Extract deal ID from MT5 Comment
-                    const dealMatch = row.MT5_Comment.match(/deal (\d+)/);
-                    if (dealMatch && dealMatch[1]) {
-                        transferredDeals.set(dealMatch[1], parseFloat(row.Commission));
-                    }
-                }
-            });
-
-            // Add this just below transferredDeals creation
-
-            const allTechDealIds = new Set(
-                tableData
-                    .filter(r => r.IB_account_type === 'technical')
-                    .map(r => r.Deal_ID)
-            );
-
-            const unmatchedMainTransfers = [];
-            tableData.forEach(row => {
-                if (row.Commission_Type === 'IBT to main') {
-                    const dealMatch = row.MT5_Comment.match(/deal (\d+)/);
-                    if (dealMatch && dealMatch[1]) {
-                        const dealId = dealMatch[1];
-                        if (!allTechDealIds.has(dealId)) {
-                            unmatchedMainTransfers.push({
-                                Date: row.date,
-                                MainMT5: row.Affiliate_MT5,
-                                MainDealID: row.Deal_ID,
-                                ReferencedDealID: dealId,
-                                Commission: row.Commission,
-                                Server: row.Server,
-                                Comment: row.MT5_Comment
-                            });
-                        }
-                    }
-                }
-            });
-
-console.log("⚠️ Unmatched Main Transfers (not linked to any technical deal):", unmatchedMainTransfers);
-
-            // Update transfer status counts and amounts
-            tableData.forEach(row => {
-                if (row.IB_account_type === 'technical') {
-                    const dealId = row.Deal_ID;
-                    if (transferredDeals.has(dealId)) {
-                        serverStats[row.Server].transferred += transferredDeals.get(dealId);
-                    } else {
-                        serverStats[row.Server].notTransferred += parseFloat(row.Commission);
-                    }
-                }
-            });
 
             // Add server-wise statistics to the table
             if (Object.keys(serverStats).length > 0) {
