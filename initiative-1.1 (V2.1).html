@@ -457,9 +457,9 @@
                         <table class="data-table" style="margin-top: 0; flex: 1;">
                             <thead>
                                 <tr>
-                                    <th>Technical Transfer</th>
-                                    <th>Transferred</th>
-                                    <th>Not Transferred</th>
+                                    <th>IBT Count</th>
+                                    <th>Successful Count</th>
+                                    <th>Failed Count</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -471,8 +471,8 @@
                         <table class="data-table" style="margin-top: 0; flex: 1;">
                             <thead>
                                 <tr>
-                                    <th>EOD on Tech</th>
-                                    <th>Transfer to Main</th>
+                                    <th>IBT Commission</th>
+                                    <th>Transferred Commission</th>
                                     <th>Not Transferred Amount</th>
                                 </tr>
                             </thead>
@@ -502,9 +502,26 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="table-wrapper" style="margin-top: 20px;">
+                        <h3>Main Account Summary</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Server</th>
+                                    <th>IB Account Type</th>
+                                    <th>Total Commission</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="3" style="text-align: center; color: #888;">No data available</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                     <h3 style="margin-top: 20px;">Results</h3>
                     <div class="table-wrapper">
-                        <h3>Commission Summary</h3>
+                        <h3>Pending/Failed Summary</h3>
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -741,7 +758,7 @@
             // Count unique deals
             const uniqueDeals = new Set(tableData.map(row => row.Deal_ID)).size;
 
-            // Count technical transfers
+            // Count IBT Count
             const technicalTransferCount = tableData.filter(row => row.IB_account_type === 'technical').length;
 
             // Count transferred deals
@@ -881,7 +898,7 @@
                                 From an end-of-day (EOD), the total amount to be transferred to technical accounts was $${eodTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}. Out of this, $${adjustedMainTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} has been successfully transferred to main, with $${notTransferredAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} still pending.
                             </div>
                             <div style="color: ${eodTotal !== adjustedMainTotal ? '#ff4444' : '#4CAF50'}">
-                                ${eodTotal === adjustedMainTotal ? 'The EOD and Main Transfer amounts are balanced.' : 'Warning: The EOD and Main Transfer amounts are unbalanced.'}
+                                ${eodTotal === adjustedMainTotal ? 'The EOD and Main Transfer amounts are tally.' : 'Warning: The EOD and Main Transfer amounts are not tally.'}
                             </div>
                         </div>
                     </div>
@@ -890,9 +907,9 @@
                         <table class="data-table" style="margin-top: 0; flex: 1;">
                             <thead>
                                 <tr>
-                                    <th>Technical Transfer</th>
-                                    <th>Transferred</th>
-                                    <th>Not Transferred</th>
+                                    <th>IBT Count</th>
+                                    <th>Successful Count</th>
+                                    <th>Failed Count</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -906,8 +923,8 @@
                         <table class="data-table" style="margin-top: 0; flex: 1;">
                             <thead>
                                 <tr>
-                                    <th>EOD on Tech</th>
-                                    <th>Transfer to Main</th>
+                                    <th>IBT Commission</th>
+                                    <th>Transferred Commission</th>
                                     <th>Not Transferred Amount</th>
                                 </tr>
                             </thead>
@@ -935,18 +952,20 @@
                             <tbody>
             `;
 
-            // Add server-wise statistics to the table
+            // Add server-wise statistics to the table for technical accounts
             if (Object.keys(serverStats).length > 0) {
                 Object.entries(serverStats).forEach(([server, stats]) => {
-                    tableHTML += `
-                        <tr>
-                            <td>${server}</td>
-                            <td>${stats.ibAccountType || '-'}</td>
-                            <td>$${stats.totalCommission.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td>$${stats.transferred.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td style="color: ${stats.notTransferred > 0 ? '#ff4444' : '#4CAF50'}">$${stats.notTransferred.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        </tr>
-                    `;
+                    if (stats.ibAccountType === 'technical') {
+                        tableHTML += `
+                            <tr>
+                                <td>${server}</td>
+                                <td>${stats.ibAccountType || '-'}</td>
+                                <td>$${stats.totalCommission.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                <td>$${stats.transferred.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                <td style="color: ${stats.notTransferred > 0 ? '#ff4444' : '#4CAF50'}">$${stats.notTransferred.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    }
                 });
             } else {
                 tableHTML += `
@@ -960,9 +979,47 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="table-wrapper" style="margin-top: 20px;">
+                        <h3>Main Account Summary by Server</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Server</th>
+                                    <th>IB Account Type</th>
+                                    <th>Total Commission</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            // Add server-wise statistics to the table for main accounts
+            if (Object.keys(serverStats).length > 0) {
+                Object.entries(serverStats).forEach(([server, stats]) => {
+                    if (stats.ibAccountType === 'main') {
+                        tableHTML += `
+                            <tr>
+                                <td>${server}</td>
+                                <td>${stats.ibAccountType || '-'}</td>
+                                <td>$${stats.totalCommission.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            </tr>
+                        `;
+                    }
+                });
+            } else {
+                tableHTML += `
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: #888;">No data available</td>
+                    </tr>
+                `;
+            }
+
+            tableHTML += `
+                            </tbody>
+                        </table>
+                    </div>
                     <h3 style="margin-top: 20px;">Results</h3>
                     <div class="table-wrapper">
-                        <h3>Commission Summary</h3>
+                        <h3>Pending/Failed Summary</h3>
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -1152,9 +1209,9 @@
                         <table class="data-table" style="margin-top: 0; flex: 1;">
                             <thead>
                                 <tr>
-                                    <th>Technical Transfer</th>
-                                    <th>Transferred</th>
-                                    <th>Not Transferred</th>
+                                    <th>IBT Count</th>
+                                    <th>Successful Count</th>
+                                    <th>Failed Count</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1166,8 +1223,8 @@
                         <table class="data-table" style="margin-top: 0; flex: 1;">
                             <thead>
                                 <tr>
-                                    <th>EOD on Tech</th>
-                                    <th>Transfer to Main</th>
+                                    <th>IBT Commission</th>
+                                    <th>Transferred Commission</th>
                                     <th>Not Transferred Amount</th>
                                 </tr>
                             </thead>
@@ -1197,9 +1254,26 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="table-wrapper" style="margin-top: 20px;">
+                        <h3>Main Account Summary</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Server</th>
+                                    <th>IB Account Type</th>
+                                    <th>Total Commission</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="3" style="text-align: center; color: #888;">No data available</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                     <h3 style="margin-top: 20px;">Results</h3>
                     <div class="table-wrapper">
-                        <h3>Commission Summary</h3>
+                        <h3>Pending/Failed Summary</h3>
                         <table class="data-table">
                             <thead>
                                 <tr>
