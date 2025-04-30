@@ -219,22 +219,41 @@
             background-color: #ff0000;
         }
 
-        /* Remove the analyze button specific styles */
-        #analyzeBtn {
-            display: none;
+        /* Add search button specific style */
+        .search-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            width: auto;
+            height: 36px; /* Match input height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
         }
 
-        /* Add these new styles */
+        .search-btn:hover {
+            background-color: #45a049;
+        }
+
+        /* Update file input group style */
         .file-input-group {
             display: flex;
             align-items: center;
             gap: 10px;
             margin-bottom: 15px;
+            width: 100%;
         }
 
-        .file-input-group input[type="file"] {
+        .file-input-group input[type="file"],
+        .file-input-group input[type="text"] {
             flex: 1;
-            margin-bottom: 0;  /* Override previous margin */
+            margin-bottom: 0;
+            height: 36px; /* Match button height */
         }
 
         .remove-file-btn {
@@ -245,7 +264,11 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 12px;
-            width: auto;  /* Override previous width: 100% */
+            width: auto;
+            height: 36px; /* Match input height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .remove-file-btn:hover {
@@ -443,7 +466,10 @@
                     </div>
 
                     <label for="clientMT5" style="margin-top: 15px;">Client MT5</label>
-                    <input type="text" id="clientMT5" placeholder="Enter Client MT5 number" style="width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #555; border-radius: 4px; background: #444; color: #fff;">
+                    <div class="file-input-group">
+                        <input type="text" id="clientMT5" placeholder="Enter Client MT5 number" style="width: 100%; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #444; color: #fff;">
+                        <button class="search-btn" onclick="searchClientMT5()">Search</button>
+                    </div>
 
                     <div class="button-group">
                         <!-- Remove the Reset button -->
@@ -1229,7 +1255,10 @@
                     </div>
 
                     <label for="clientMT5" style="margin-top: 15px;">Client MT5</label>
-                    <input type="text" id="clientMT5" placeholder="Enter Client MT5 number" style="width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #555; border-radius: 4px; background: #444; color: #fff;">
+                    <div class="file-input-group">
+                        <input type="text" id="clientMT5" placeholder="Enter Client MT5 number" style="width: 100%; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #444; color: #fff;">
+                        <button class="search-btn" onclick="searchClientMT5()">Search</button>
+                    </div>
 
                     <div class="button-group">
                         <!-- Remove the Reset button -->
@@ -1240,7 +1269,8 @@
             `;
 
             // Reattach the event listener for the file input
-            document.getElementById('metabaseReport').addEventListener('change', function(event) {
+            const fileInput = document.getElementById('metabaseReport');
+            fileInput.addEventListener('change', function(event) {
                 const file = event.target.files[0];
                 readMetabaseFile(file);
             });
@@ -1279,7 +1309,10 @@
                     </div>
 
                     <label for="clientMT5" style="margin-top: 15px;">Client MT5</label>
-                    <input type="text" id="clientMT5" placeholder="Enter Client MT5 number" style="width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #555; border-radius: 4px; background: #444; color: #fff;">
+                    <div class="file-input-group">
+                        <input type="text" id="clientMT5" placeholder="Enter Client MT5 number" style="width: 100%; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #444; color: #fff;">
+                        <button class="search-btn" onclick="searchClientMT5()">Search</button>
+                    </div>
 
                     <div class="button-group">
                         <!-- Remove the Reset button -->
@@ -1289,7 +1322,8 @@
             `;
 
             // Reattach the event listener for the file input
-            document.getElementById('metabaseReport').addEventListener('change', function(event) {
+            const fileInput = document.getElementById('metabaseReport');
+            fileInput.addEventListener('change', function(event) {
                 const file = event.target.files[0];
                 // Update the file name display
                 const fileNameDisplay = document.getElementById('uploadedFileName');
@@ -1300,6 +1334,73 @@
                 }
                 readMetabaseFile(file);
             });
+        }
+
+        // Add this new function to handle client MT5 search
+        function searchClientMT5() {
+            const clientMT5 = document.getElementById('clientMT5').value.trim();
+            if (!clientMT5) {
+                alert('Please enter a Client MT5 number');
+                return;
+            }
+            
+            // Filter the table data based on the client MT5
+            const filteredData = window.tableData?.filter(row => {
+                const clientMT5FromComment = extractClientMT5(row.MT5_Comment);
+                return clientMT5FromComment === clientMT5;
+            });
+
+            if (filteredData && filteredData.length > 0) {
+                // Update the table with filtered data
+                const rightColumn = document.querySelector('.right-column');
+                const tableHTML = generateTableHTML(filteredData);
+                rightColumn.innerHTML = tableHTML;
+            } else {
+                alert('No data found for the specified Client MT5');
+            }
+        }
+
+        // Add this helper function to generate table HTML
+        function generateTableHTML(data) {
+            return `
+                <div class="top-rectangle">
+                    <!-- Your existing table HTML structure -->
+                    <!-- ... -->
+                </div>
+                <div class="table-wrapper">
+                    <h3>Fetched Data</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>AFF MT5</th>
+                                <th>Deal ID</th>
+                                <th>IB Account Type</th>
+                                <th>Server</th>
+                                <th>Commission</th>
+                                <th>MT5 Comment</th>
+                                <th>Client MT5</th>
+                                <th>Commission Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.map(row => `
+                                <tr>
+                                    <td>${row.date}</td>
+                                    <td>${row.Affiliate_MT5}</td>
+                                    <td>${row.Deal_ID}</td>
+                                    <td>${row.IB_account_type}</td>
+                                    <td>${row.Server}</td>
+                                    <td>${row.Commission}</td>
+                                    <td>${row.MT5_Comment}</td>
+                                    <td>${extractClientMT5(row.MT5_Comment)}</td>
+                                    <td>${row.Commission_Type}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
         }
     </script>
 </body>
