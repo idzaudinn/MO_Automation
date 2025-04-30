@@ -119,7 +119,7 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
-            flex: 0 0 400px;  /* Fixed width of 400px */
+            flex: 0 0 300px;  /* Reduced from 400px to 300px */
         }
 
         .left-column, .right-column, .instruction-box {
@@ -130,7 +130,7 @@
         }
 
         .right-column {
-            flex: 1;  /* Takes remaining space */
+            flex: 2;  /* Increased from 1 to 2 to make it larger */
         }
 
         .instruction-box {
@@ -380,6 +380,40 @@
             font-size: 24px;
             font-weight: bold;
         }
+
+        /* Add specific column widths for Fetched Data table */
+        .data-table th:nth-child(1),
+        .data-table td:nth-child(1) {
+            width: 9%;  /* Date column */
+        }
+        .data-table th:nth-child(2),
+        .data-table td:nth-child(2) {
+            width: 10%;  /* AFF MT5 column */
+        }
+        .data-table th:nth-child(3),
+        .data-table td:nth-child(3) {
+            width: 11%;  /* Deal ID column */
+        }
+        .data-table th:nth-child(4),
+        .data-table td:nth-child(4) {
+            width: 12%;  /* IB Account Type column */
+        }
+        .data-table th:nth-child(5),
+        .data-table td:nth-child(5) {
+            width: 8%;  /* Server column */
+        }
+        .data-table th:nth-child(6),
+        .data-table td:nth-child(6) {
+            width: 10%;  /* Commission column */
+        }
+        .data-table th:nth-child(7),
+        .data-table td:nth-child(7) {
+            width: 24%;  /* MT5 Comment column */
+        }
+        .data-table th:nth-child(8),
+        .data-table td:nth-child(8) {
+            width: 16%;  /* Commission Type column */
+        }
     </style>
 </head>
 <body>
@@ -549,7 +583,7 @@
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Affiliate MT5</th>
+                                <th>AFF MT5</th>
                                 <th>Deal ID</th>
                                 <th>IB Account Type</th>
                                 <th>Server</th>
@@ -1093,7 +1127,7 @@
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Affiliate MT5</th>
+                                <th>AFF MT5</th>
                                 <th>Deal ID</th>
                                 <th>IB Account Type</th>
                                 <th>Server</th>
@@ -1301,7 +1335,7 @@
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Affiliate MT5</th>
+                                <th>AFF MT5</th>
                                 <th>Deal ID</th>
                                 <th>IB Account Type</th>
                                 <th>Server</th>
