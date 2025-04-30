@@ -119,7 +119,7 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
-            flex: 0 0 300px;  /* Reduced from 400px to 300px */
+            flex: 0 0 250px;  /* Reduced from 400px to 300px */
         }
 
         .left-column, .right-column, .instruction-box {
@@ -130,7 +130,7 @@
         }
 
         .right-column {
-            flex: 2;  /* Increased from 1 to 2 to make it larger */
+            flex: 3;  /* Increased from 1 to 2 to make it larger */
         }
 
         .instruction-box {
@@ -384,35 +384,39 @@
         /* Add specific column widths for Fetched Data table */
         .data-table th:nth-child(1),
         .data-table td:nth-child(1) {
-            width: 9%;  /* Date column */
+            width: 8%;  /* Date column */
         }
         .data-table th:nth-child(2),
         .data-table td:nth-child(2) {
-            width: 10%;  /* AFF MT5 column */
+            width: 9%;  /* AFF MT5 column */
         }
         .data-table th:nth-child(3),
         .data-table td:nth-child(3) {
-            width: 11%;  /* Deal ID column */
+            width: 10%;  /* Deal ID column */
         }
         .data-table th:nth-child(4),
         .data-table td:nth-child(4) {
-            width: 12%;  /* IB Account Type column */
+            width: 11%;  /* IB Account Type column */
         }
         .data-table th:nth-child(5),
         .data-table td:nth-child(5) {
-            width: 8%;  /* Server column */
+            width: 7%;  /* Server column */
         }
         .data-table th:nth-child(6),
         .data-table td:nth-child(6) {
-            width: 10%;  /* Commission column */
+            width: 9%;  /* Commission column */
         }
         .data-table th:nth-child(7),
         .data-table td:nth-child(7) {
-            width: 24%;  /* MT5 Comment column */
+            width: 20%;  /* MT5 Comment column */
         }
         .data-table th:nth-child(8),
         .data-table td:nth-child(8) {
-            width: 16%;  /* Commission Type column */
+            width: 16%;  /* Client MT5 column */
+        }
+        .data-table th:nth-child(9),
+        .data-table td:nth-child(9) {
+            width: 10%;  /* Commission Type column */
         }
     </style>
 </head>
@@ -437,6 +441,9 @@
                     <div style="margin-top: 10px; padding: 8px; background: #444; border-radius: 4px; color: #bbb;">
                         Uploaded file: <span id="uploadedFileName">No file uploaded</span>
                     </div>
+
+                    <label for="clientMT5" style="margin-top: 15px;">Client MT5</label>
+                    <input type="text" id="clientMT5" placeholder="Enter Client MT5 number" style="width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #555; border-radius: 4px; background: #444; color: #fff;">
 
                     <div class="button-group">
                         <!-- Remove the Reset button -->
@@ -469,8 +476,8 @@
         let mt5Data = [];
         let metabaseData = [];
 
-        // Initialize the right column with Commission Summary when page loads
-        document.addEventListener('DOMContentLoaded', function() {
+        // Function to initialize empty tables
+        function initializeEmptyTables() {
             const rightColumn = document.querySelector('.right-column');
             rightColumn.innerHTML = `
                 <div class="top-rectangle">
@@ -589,17 +596,23 @@
                                 <th>Server</th>
                                 <th>Commission</th>
                                 <th>MT5 Comment</th>
+                                <th>Client MT5</th>
                                 <th>Commission Type</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td colspan="8" style="text-align: center; color: #888;">No data available</td>
+                                <td colspan="9" style="text-align: center; color: #888;">No data available</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             `;
+        }
+
+        // Initialize the page when it loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEmptyTables();
         });
 
         document.getElementById('metabaseReport').addEventListener('change', function(event) {
@@ -771,6 +784,26 @@
                 displayDataTable();
             };
             reader.readAsText(file);
+        }
+
+        function extractClientMT5(mt5Comment) {
+            if (!mt5Comment) return '-';
+            
+            // Pattern 1: "agent from '41513829' []"
+            const pattern1 = /agent from '(\d+)'/;
+            const match1 = mt5Comment.match(pattern1);
+            if (match1) {
+                return match1[1];
+            }
+            
+            // Pattern 2: "deal 5078154796 MT 80402906"
+            const pattern2 = /MT (\d+)/;
+            const match2 = mt5Comment.match(pattern2);
+            if (match2) {
+                return match2[1];
+            }
+            
+            return '-';
         }
 
         function displayDataTable() {
@@ -1133,6 +1166,7 @@
                                 <th>Server</th>
                                 <th>Commission</th>
                                 <th>MT5 Comment</th>
+                                <th>Client MT5</th>
                                 <th>Commission Type</th>
                             </tr>
                         </thead>
@@ -1150,6 +1184,7 @@
                             <td>${row.Server}</td>
                             <td>${row.Commission}</td>
                             <td>${row.MT5_Comment}</td>
+                            <td>${extractClientMT5(row.MT5_Comment)}</td>
                             <td>${row.Commission_Type}</td>
                         </tr>
                     `;
@@ -1157,7 +1192,7 @@
             } else {
                 tableHTML += `
                     <tr>
-                        <td colspan="8" style="text-align: center; color: #888;">No data available</td>
+                        <td colspan="9" style="text-align: center; color: #888;">No data available</td>
                     </tr>
                 `;
             }
@@ -1193,6 +1228,9 @@
                         Uploaded file: <span id="uploadedFileName">No file uploaded</span>
                     </div>
 
+                    <label for="clientMT5" style="margin-top: 15px;">Client MT5</label>
+                    <input type="text" id="clientMT5" placeholder="Enter Client MT5 number" style="width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #555; border-radius: 4px; background: #444; color: #fff;">
+
                     <div class="button-group">
                         <!-- Remove the Reset button -->
                         <!-- <button id="resetBtn" onclick="resetFiles()">Reset</button> -->
@@ -1223,135 +1261,7 @@
             window.mainAccountCommissions = null;
 
             // Reinitialize the right column with empty tables
-            const rightColumn = document.querySelector('.right-column');
-            rightColumn.innerHTML = `
-                <div class="top-rectangle">
-                    <div style="margin-bottom: 20px; padding: 15px; background: #444; border-radius: 4px;">
-                        <h3 style="margin: 0 0 10px 0;">AFF Main MT5</h3>
-                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                            <div style="color: #888;">No main account MT5s available</div>
-                        </div>
-                    </div>
-                    <div style="margin-bottom: 20px; padding: 15px; background: #444; border-radius: 4px;">
-                        <h3 style="margin: 0 0 10px 0;">Results</h3>
-                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                            <div style="color: #888;">No results available</div>
-                        </div>
-                    </div>
-                    <h3>Transfer Summary</h3>
-                    <div class="table-wrapper" style="display: flex; gap: 20px;">
-                        <table class="data-table" style="margin-top: 0; flex: 1;">
-                            <thead>
-                                <tr>
-                                    <th>IBT Count</th>
-                                    <th>Successful Count</th>
-                                    <th>Failed Count</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="3" style="text-align: center; color: #888;">No data available</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <table class="data-table" style="margin-top: 0; flex: 1;">
-                            <thead>
-                                <tr>
-                                    <th>IBT Commission</th>
-                                    <th>Transferred Commission</th>
-                                    <th>Not Transferred Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="3" style="text-align: center; color: #888;">No data available</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="table-wrapper" style="margin-top: 20px;">
-                        <h3>Technical Transfer Summary by Server</h3>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Server</th>
-                                    <th>IB Account Type</th>
-                                    <th>Total Commission</th>
-                                    <th>Transferred</th>
-                                    <th>Not Transferred</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="5" style="text-align: center; color: #888;">No data available</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="table-wrapper" style="margin-top: 20px;">
-                        <h3>Main Account Summary</h3>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Server</th>
-                                    <th>IB Account Type</th>
-                                    <th>Total Commission</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="3" style="text-align: center; color: #888;">No data available</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <h3 style="margin-top: 20px;">Results</h3>
-                    <div class="table-wrapper">
-                        <h3>Pending/Failed Summary</h3>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Deal ID</th>
-                                    <th>Server</th>
-                                    <th>Technical Account</th>
-                                    <th>Technical Date</th>
-                                    <th>Main Account</th>
-                                    <th>Main Date</th>
-                                    <th>Commission</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="8" style="text-align: center; color: #888;">No data available</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="table-wrapper">
-                    <h3>Fetched Data</h3>
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>AFF MT5</th>
-                                <th>Deal ID</th>
-                                <th>IB Account Type</th>
-                                <th>Server</th>
-                                <th>Commission</th>
-                                <th>MT5 Comment</th>
-                                <th>Commission Type</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="8" style="text-align: center; color: #888;">No data available</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            `;
+            initializeEmptyTables();
             
             // Reset the left column to show only the upload section
             const leftColumn = document.querySelector('.left-column');
@@ -1368,6 +1278,9 @@
                         Uploaded file: <span id="uploadedFileName">No file uploaded</span>
                     </div>
 
+                    <label for="clientMT5" style="margin-top: 15px;">Client MT5</label>
+                    <input type="text" id="clientMT5" placeholder="Enter Client MT5 number" style="width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #555; border-radius: 4px; background: #444; color: #fff;">
+
                     <div class="button-group">
                         <!-- Remove the Reset button -->
                         <!-- <button id="resetBtn" onclick="resetFiles()">Reset</button> -->
@@ -1378,13 +1291,16 @@
             // Reattach the event listener for the file input
             document.getElementById('metabaseReport').addEventListener('change', function(event) {
                 const file = event.target.files[0];
+                // Update the file name display
+                const fileNameDisplay = document.getElementById('uploadedFileName');
                 if (file) {
-                    document.getElementById('uploadedFileName').textContent = file.name;
-                    readMetabaseFile(file);
+                    fileNameDisplay.textContent = file.name;
+                } else {
+                    fileNameDisplay.textContent = 'No file uploaded';
                 }
+                readMetabaseFile(file);
             });
         }
     </script>
-
 </body>
 </html>
