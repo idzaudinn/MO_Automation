@@ -470,10 +470,8 @@
                         <input type="text" id="clientMT5" placeholder="Enter Client MT5 number" style="width: 100%; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #444; color: #fff;">
                         <button class="search-btn" onclick="searchClientMT5()">Search</button>
                     </div>
-
-                    <div class="button-group">
-                        <!-- Remove the Reset button -->
-                        <!-- <button id="resetBtn" onclick="resetFiles()">Reset</button> -->
+                    <div style="margin-top: 10px;">
+                        <button class="search-btn" onclick="resetClientMT5()" style="width: 100%;">Clear Client Filter</button>
                     </div>
                 </div>
             </div>
@@ -1199,33 +1197,19 @@
                             </tr>
                         </thead>
                         <tbody>
-            `;
-
-            if (tableData.length > 0) {
-                tableData.forEach(row => {
-                    tableHTML += `
-                        <tr>
-                            <td>${row.date}</td>
-                            <td>${row.Affiliate_MT5}</td>
-                            <td>${row.Deal_ID}</td>
-                            <td>${row.IB_account_type}</td>
-                            <td>${row.Server}</td>
-                            <td>${row.Commission}</td>
-                            <td>${row.MT5_Comment}</td>
-                            <td>${extractClientMT5(row.MT5_Comment)}</td>
-                            <td>${row.Commission_Type}</td>
-                        </tr>
-                    `;
-                });
-            } else {
-                tableHTML += `
-                    <tr>
-                        <td colspan="9" style="text-align: center; color: #888;">No data available</td>
-                    </tr>
-                `;
-            }
-
-            tableHTML += `
+                            ${tableData.map(row => `
+                                <tr>
+                                    <td>${row.date}</td>
+                                    <td>${row.Affiliate_MT5}</td>
+                                    <td>${row.Deal_ID}</td>
+                                    <td>${row.IB_account_type}</td>
+                                    <td>${row.Server}</td>
+                                    <td>${row.Commission}</td>
+                                    <td>${row.MT5_Comment}</td>
+                                    <td>${extractClientMT5(row.MT5_Comment)}</td>
+                                    <td>${row.Commission_Type}</td>
+                                </tr>
+                            `).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -1261,10 +1245,8 @@
                         <input type="text" id="clientMT5" placeholder="Enter Client MT5 number" style="width: 100%; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #444; color: #fff;">
                         <button class="search-btn" onclick="searchClientMT5()">Search</button>
                     </div>
-
-                    <div class="button-group">
-                        <!-- Remove the Reset button -->
-                        <!-- <button id="resetBtn" onclick="resetFiles()">Reset</button> -->
+                    <div style="margin-top: 10px;">
+                        <button class="search-btn" onclick="resetClientMT5()" style="width: 100%;">Clear Client Filter</button>
                     </div>
                 </div>
                 ${messageBox}
@@ -1315,10 +1297,8 @@
                         <input type="text" id="clientMT5" placeholder="Enter Client MT5 number" style="width: 100%; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #444; color: #fff;">
                         <button class="search-btn" onclick="searchClientMT5()">Search</button>
                     </div>
-
-                    <div class="button-group">
-                        <!-- Remove the Reset button -->
-                        <!-- <button id="resetBtn" onclick="resetFiles()">Reset</button> -->
+                    <div style="margin-top: 10px;">
+                        <button class="search-btn" onclick="resetClientMT5()" style="width: 100%;">Clear Client Filter</button>
                     </div>
                 </div>
             `;
@@ -1360,7 +1340,20 @@
 
                 // Calculate statistics for filtered data
                 const technicalTransferCount = filteredData.filter(row => row.IB_account_type === 'technical').length;
-                const transferredCount = filteredData.filter(row => row.Commission_Type === 'IBT to main').length;
+                
+                // Create a map of transferred deals for the filtered data
+                const transferredDeals = new Map();
+                filteredData.forEach(row => {
+                    if (row.Commission_Type === 'IBT to main') {
+                        const dealMatch = row.MT5_Comment.match(/deal (\d+)/);
+                        if (dealMatch && dealMatch[1]) {
+                            transferredDeals.set(dealMatch[1], parseFloat(row.Commission));
+                        }
+                    }
+                });
+
+                // Count transferred and not transferred deals
+                const transferredCount = transferredDeals.size;
                 const notTransferredCount = technicalTransferCount - transferredCount;
 
                 // Calculate commission amounts
@@ -1368,16 +1361,22 @@
                     .filter(row => row.Commission_Type === 'EOD' && row.IB_account_type === 'technical')
                     .reduce((sum, row) => sum + parseFloat(row.Commission), 0);
 
-                const mainTotal = filteredData
-                    .filter(row => row.Commission_Type === 'IBT to main')
-                    .reduce((sum, row) => sum + parseFloat(row.Commission), 0);
+                const mainTotal = Array.from(transferredDeals.values())
+                    .reduce((sum, commission) => sum + commission, 0);
 
                 const notTransferredAmount = filteredData
-                    .filter(row => row.IB_account_type === 'technical' && row.Commission_Type !== 'IBT to main')
+                    .filter(row => {
+                        if (row.IB_account_type === 'technical') {
+                            return !transferredDeals.has(row.Deal_ID);
+                        }
+                        return false;
+                    })
                     .reduce((sum, row) => sum + parseFloat(row.Commission), 0);
 
                 // Calculate server-wise statistics
                 const serverStats = {};
+                
+                // First, initialize stats for all servers from filtered data
                 filteredData.forEach(row => {
                     if (!serverStats[row.Server]) {
                         serverStats[row.Server] = {
@@ -1388,10 +1387,13 @@
                         };
                     }
                     serverStats[row.Server].totalCommission += parseFloat(row.Commission);
-                    
+                });
+
+                // Update transfer status counts and amounts for each server
+                filteredData.forEach(row => {
                     if (row.IB_account_type === 'technical') {
-                        if (row.Commission_Type === 'IBT to main') {
-                            serverStats[row.Server].transferred += parseFloat(row.Commission);
+                        if (transferredDeals.has(row.Deal_ID)) {
+                            serverStats[row.Server].transferred += transferredDeals.get(row.Deal_ID);
                         } else {
                             serverStats[row.Server].notTransferred += parseFloat(row.Commission);
                         }
@@ -1543,12 +1545,19 @@
                                 </thead>
                                 <tbody>
                                     ${filteredData
-                                        .filter(row => row.IB_account_type === 'technical' && row.Commission_Type !== 'IBT to main')
+                                        .filter(row => {
+                                            // Only show technical entries that haven't been transferred
+                                            if (row.IB_account_type === 'technical') {
+                                                // Check if there's a corresponding IBT to main entry
+                                                const hasTransfer = filteredData.some(r => 
+                                                    r.Commission_Type === 'IBT to main' && 
+                                                    r.MT5_Comment.includes(`deal ${row.Deal_ID}`)
+                                                );
+                                                return !hasTransfer;
+                                            }
+                                            return false;
+                                        })
                                         .map(row => {
-                                            const mainEntry = filteredData.find(r => 
-                                                r.Commission_Type === 'IBT to main' && 
-                                                r.MT5_Comment.includes(`deal ${row.Deal_ID}`)
-                                            );
                                             const today = new Date();
                                             const yesterday = new Date(today);
                                             yesterday.setDate(yesterday.getDate() - 1);
@@ -1562,8 +1571,8 @@
                                                     <td>${row.Server}</td>
                                                     <td>${row.Affiliate_MT5}</td>
                                                     <td>${row.date}</td>
-                                                    <td>${mainEntry?.Affiliate_MT5 || '-'}</td>
-                                                    <td>${mainEntry?.date || '-'}</td>
+                                                    <td>-</td>
+                                                    <td>-</td>
                                                     <td>${row.Commission}</td>
                                                     <td style="color: ${statusColor}">${status}</td>
                                                 </tr>
@@ -1613,6 +1622,17 @@
                 rightColumn.innerHTML = tableHTML;
             } else {
                 alert('No data found for the specified Client MT5');
+            }
+        }
+
+        // Add this new function to handle client MT5 reset
+        function resetClientMT5() {
+            // Clear the input field
+            document.getElementById('clientMT5').value = '';
+            
+            // Reset the display to show all data
+            if (window.tableData) {
+                displayDataTable();
             }
         }
     </script>
