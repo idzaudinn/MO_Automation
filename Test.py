@@ -12,14 +12,22 @@ client = openai.OpenAI(
     base_url=LITE_LL_BASE_URL,
 )
 
-st.title("AI Data Analysis Agent")
+st.title("Marketing Ops Analysis Agent")
 
 uploaded_file = st.file_uploader("Upload your data file (CSV)", type="csv")
-user_query = st.text_input("Ask a question about your data")
+user_query = st.text_input("Ask a question about your data", key="query_input")
 
-if uploaded_file and user_query:
-    df = pd.read_csv(uploaded_file)
-    sample_data = df.head(500).to_csv(index=False)
+# Initialize session state for storing the dataframe
+if 'df' not in st.session_state:
+    st.session_state.df = None
+
+# Update dataframe when file is uploaded
+if uploaded_file is not None:
+    st.session_state.df = pd.read_csv(uploaded_file)
+
+# Only process when user presses enter and both file and query are present
+if user_query and st.session_state.df is not None:
+    sample_data = st.session_state.df.head(500).to_csv(index=False)
     prompt = f"Dataset:\n{sample_data}\nUser question: {user_query}"
     
     response = client.chat.completions.create(
