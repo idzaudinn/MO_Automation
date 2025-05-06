@@ -6,9 +6,10 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: #f5f7fa;
+            background: #222;
+            color: #ddd;
             margin: 0;
-            padding: 0;
+            padding: 20px;
         }
         .buttons {
             margin: 24px auto 0px;
@@ -18,7 +19,7 @@
         }
         .nav-btn {
             padding: 10px 20px;
-            background: #007acc;
+            background: #4CAF50;
             color: #fff;
             border: none;
             border-radius: 5px;
@@ -29,40 +30,41 @@
             transition: background 0.2s;
         }
         .nav-btn:hover {
-            background: #005da3;
+            background: #45a049;
         }
         h1 {
             text-align: center;
             margin-top: 32px;
+            color: #fff;
         }
         .square-list {
             display: flex;
-            flex-wrap: wrap;
-            gap: 24px;
-            justify-content: center;
-            margin: 40px 0;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 800px;
+            margin: 40px auto;
         }
         .square-link {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 220px;
-            height: 140px;
-            background: #fff;
-            color: #007acc;
-            border-radius: 15px;
+            width: 100%;
+            height: 80px;
+            background: #333;
+            color: #fff;
+            border-radius: 8px;
             text-align: center;
             font-size: 18px;
             text-decoration: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             transition: box-shadow 0.2s, transform 0.2s;
             word-break: break-word;
             padding: 10px;
         }
         .square-link:hover {
-            background: #f0f6fa;
-            box-shadow: 0 6px 16px rgba(0,122,204,0.15);
-            transform: translateY(-4px) scale(1.02);
+            background: #444;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+            transform: translateY(-2px);
         }
     </style>
     <script>
@@ -82,13 +84,13 @@
     <h1>Automation Projects</h1>
     <div class="square-list">
         <a class="square-link" href="initiative 1.1 (Client specific).html">
-            Initiative 1.1<br>(Client specific)
+            Initiative 1.1 (Client specific)
         </a>
         <a class="square-link" href="initiative-1.1 (Commission Payout Analysis).html">
-            Initiative-1.1<br>(Commission Payout Analysis)
+            Initiative-1.1 (Commission Payout Analysis)
         </a>
         <a class="square-link" href="initiative-1.1 (V2.1).html">
-            Initiative-1.1<br>(V2.1)
+            Initiative-1.1 (V2.1)
         </a>
         <a class="square-link" href="initiative-1.1.html">
             Initiative-1.1
@@ -100,10 +102,10 @@
             Missing IBT AI Test
         </a>
         <a class="square-link" href="Missing IBT commission Transfer Check (Client Specific).html">
-            Missing IBT commission Transfer Check<br>(Client Specific)
+            Missing IBT commission Transfer Check (Client Specific)
         </a>
         <a class="square-link" href="Missing IBT commission Transfer Check (General).html">
-            Missing IBT commission Transfer Check<br>(General)
+            Missing IBT commission Transfer Check (General)
         </a>
     </div>
 </body>
