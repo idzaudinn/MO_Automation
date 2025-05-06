@@ -19,7 +19,7 @@ user_query = st.text_input("Ask a question about your data")
 
 if uploaded_file and user_query:
     df = pd.read_csv(uploaded_file)
-    sample_data = df.head(5).to_csv(index=False)
+    sample_data = df.head(500).to_csv(index=False)
     prompt = f"Dataset:\n{sample_data}\nUser question: {user_query}"
     
     response = client.chat.completions.create(

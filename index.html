@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Automation Homepage</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        .buttons {
+            margin: 24px auto 0px;
+            width: 320px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .nav-btn {
+            padding: 10px 20px;
+            background: #007acc;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .nav-btn:hover {
+            background: #005da3;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 32px;
+        }
+        .square-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            justify-content: center;
+            margin: 40px 0;
+        }
+        .square-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 220px;
+            height: 140px;
+            background: #fff;
+            color: #007acc;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 18px;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: box-shadow 0.2s, transform 0.2s;
+            word-break: break-word;
+            padding: 10px;
+        }
+        .square-link:hover {
+            background: #f0f6fa;
+            box-shadow: 0 6px 16px rgba(0,122,204,0.15);
+            transform: translateY(-4px) scale(1.02);
+        }
+    </style>
+    <script>
+        function goBack() {
+            window.history.back();
+        }
+        function goHome() {
+            window.location.href = "index.html";
+        }
+    </script>
+</head>
+<body>
+    <div class="buttons">
+        <button class="nav-btn" onclick="goHome()">🏠 Home</button>
+        <button class="nav-btn" onclick="goBack()">← Back</button>
+    </div>
+    <h1>Automation Projects</h1>
+    <div class="square-list">
+        <a class="square-link" href="initiative 1.1 (Client specific).html">
+            Initiative 1.1<br>(Client specific)
+        </a>
+        <a class="square-link" href="initiative-1.1 (Commission Payout Analysis).html">
+            Initiative-1.1<br>(Commission Payout Analysis)
+        </a>
+        <a class="square-link" href="initiative-1.1 (V2.1).html">
+            Initiative-1.1<br>(V2.1)
+        </a>
+        <a class="square-link" href="initiative-1.1.html">
+            Initiative-1.1
+        </a>
+        <a class="square-link" href="initiative-2.0.html">
+            Initiative-2.0
+        </a>
+        <a class="square-link" href="Missing IBT AI Test.html">
+            Missing IBT AI Test
+        </a>
+        <a class="square-link" href="Missing IBT commission Transfer Check (Client Specific).html">
+            Missing IBT commission Transfer Check<br>(Client Specific)
+        </a>
+        <a class="square-link" href="Missing IBT commission Transfer Check (General).html">
+            Missing IBT commission Transfer Check<br>(General)
+        </a>
+    </div>
+</body>
+</html>

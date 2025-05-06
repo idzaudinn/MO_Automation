@@ -12,6 +12,7 @@
             color: #ddd;
             margin: 0;
             padding: 20px;
+            position: relative;  /* Add this for absolute positioning of home button */
         }
         h1 {
             text-align: left;
@@ -380,10 +381,31 @@
             font-size: 24px;
             font-weight: bold;
         }
+
+        /* Add home button styles */
+        .home-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            z-index: 1000;
+        }
+
+        .home-button:hover {
+            background: #45a049;
+        }
     </style>
 </head>
 <body>
-
+    <a href="index.html" class="home-button">Home</a>
     <h1>Commission Payout Analysis</h1>
     <h2>Use this tool to check the general commissions data between MT5, Metabase and to find the discrepancies based on the report dates. 
         Please use the main affiliate report for the analysis</h2>
