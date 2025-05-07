@@ -1397,7 +1397,14 @@
             });
         }
 
-        // Add this new function to handle client MT5 search
+        // Add these variables at the top of the script section
+        let currentFilters = {
+            clientMT5: '',
+            startDate: '',
+            endDate: ''
+        };
+
+        // Modify the searchClientMT5 function
         function searchClientMT5() {
             const clientMT5 = document.getElementById('clientMT5').value.trim();
             if (!clientMT5) {
@@ -1405,316 +1412,26 @@
                 return;
             }
             
-            // Filter the table data based on the client MT5
-            const filteredData = window.tableData?.filter(row => {
-                const clientMT5FromComment = extractClientMT5(row.MT5_Comment);
-                return clientMT5FromComment === clientMT5;
-            });
-
-            if (filteredData && filteredData.length > 0) {
-                // Get unique AFF Main MT5s from the filtered data
-                const mainAccountMT5s = [...new Set(filteredData
-                    .filter(row => row.IB_account_type === 'main')
-                    .map(row => row.Affiliate_MT5))];
-
-                // Calculate statistics for filtered data
-                const technicalTransferCount = filteredData.filter(row => row.IB_account_type === 'technical').length;
-                
-                // Create a map of transferred deals for the filtered data
-                const transferredDeals = new Map();
-                filteredData.forEach(row => {
-                    if (row.Commission_Type === 'IBT to main') {
-                        const dealMatch = row.MT5_Comment.match(/deal (\d+)/);
-                        if (dealMatch && dealMatch[1]) {
-                            transferredDeals.set(dealMatch[1], parseFloat(row.Commission));
-                        }
-                    }
-                });
-
-                // Count transferred and not transferred deals
-                const transferredCount = transferredDeals.size;
-                const notTransferredCount = technicalTransferCount - transferredCount;
-
-                // Calculate commission amounts
-                const eodTotal = filteredData
-                    .filter(row => row.Commission_Type === 'EOD' && row.IB_account_type === 'technical')
-                    .reduce((sum, row) => sum + parseFloat(row.Commission), 0);
-
-                const mainTotal = Array.from(transferredDeals.values())
-                    .reduce((sum, commission) => sum + commission, 0);
-
-                const notTransferredAmount = filteredData
-                    .filter(row => {
-                        if (row.IB_account_type === 'technical') {
-                            return !transferredDeals.has(row.Deal_ID);
-                        }
-                        return false;
-                    })
-                    .reduce((sum, row) => sum + parseFloat(row.Commission), 0);
-
-                // Calculate server-wise statistics
-                const serverStats = {};
-                
-                // First, initialize stats for all servers from filtered data
-                filteredData.forEach(row => {
-                    if (!serverStats[row.Server]) {
-                        serverStats[row.Server] = {
-                            totalCommission: 0,
-                            transferred: 0,
-                            notTransferred: 0,
-                            ibAccountType: row.IB_account_type
-                        };
-                    }
-                    serverStats[row.Server].totalCommission += parseFloat(row.Commission);
-                });
-
-                // Update transfer status counts and amounts for each server
-                filteredData.forEach(row => {
-                    if (row.IB_account_type === 'technical') {
-                        if (transferredDeals.has(row.Deal_ID)) {
-                            serverStats[row.Server].transferred += transferredDeals.get(row.Deal_ID);
-                        } else {
-                            serverStats[row.Server].notTransferred += parseFloat(row.Commission);
-                        }
-                    }
-                });
-
-                // Generate the filtered table HTML
-                const tableHTML = `
-                    <div class="top-rectangle">
-                        <div style="margin-bottom: 20px; padding: 15px; background: #444; border-radius: 4px;">
-                            <div style="display: flex; gap: 20px;">
-                                <div style="flex: 1;">
-                                    <h3 style="margin: 0 0 10px 0;">AFF Main MT5</h3>
-                                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                                        ${mainAccountMT5s.length > 0 
-                                            ? mainAccountMT5s.map(mt5 => `
-                                                <div style="background: #555; padding: 8px 12px; border-radius: 4px; color: #4CAF50;">
-                                                    ${mt5}
-                                                </div>
-                                            `).join('')
-                                            : '<div style="color: #888;">No main account MT5s available</div>'
-                                        }
-                                    </div>
-                                </div>
-                                <div style="flex: 1;">
-                                    <h3 style="margin: 0 0 10px 0;">Client MT5</h3>
-                                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                                        <div style="background: #555; padding: 8px 12px; border-radius: 4px; color: #4CAF50;">
-                                            ${clientMT5}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="margin-bottom: 20px; padding: 15px; background: #444; border-radius: 4px;">
-                            <h3 style="margin: 0 0 10px 0;">Results</h3>
-                            <div style="display: flex; flex-direction: column; gap: 10px; color: #ddd; line-height: 1.5;">
-                                <div>
-                                    A total of ${technicalTransferCount.toLocaleString()} technical transactions were processed, from which ${transferredCount.toLocaleString()} were successfully transferred. This leaves ${notTransferredCount.toLocaleString()} transactions not transferred.
-                                </div>
-                                <div>
-                                    From an end-of-day (EOD), the total amount to be transferred to technical accounts was $${eodTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}. Out of this, $${mainTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} has been successfully transferred to main, with $${notTransferredAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} still pending.
-                                </div>
-                                <div style="color: ${eodTotal !== mainTotal ? '#ff4444' : '#4CAF50'}">
-                                    ${eodTotal === mainTotal ? 'The EOD and Main Transfer amounts are tally.' : 'Warning: The EOD and Main Transfer amounts are not tally.'}
-                                </div>
-                            </div>
-                        </div>
-                        <h3>Transfer Summary</h3>
-                        <div class="table-wrapper" style="display: flex; gap: 20px;">
-                            <table class="data-table" style="margin-top: 0; flex: 1;">
-                                <thead>
-                                    <tr>
-                                        <th>IBT Count</th>
-                                        <th>Successful Count</th>
-                                        <th>Failed Count</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>${technicalTransferCount.toLocaleString()}</td>
-                                        <td>${transferredCount.toLocaleString()}</td>
-                                        <td style="color: ${notTransferredCount > 0 ? '#ff4444' : '#4CAF50'}">${notTransferredCount.toLocaleString()}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <table class="data-table" style="margin-top: 0; flex: 1;">
-                                <thead>
-                                    <tr>
-                                        <th>IBT Commission</th>
-                                        <th>Transferred Commission</th>
-                                        <th>Not Transferred Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>$${eodTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                                        <td>$${mainTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                                        <td style="color: ${notTransferredAmount > 0 ? '#ff4444' : '#4CAF50'}">$${notTransferredAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="table-wrapper" style="margin-top: 20px;">
-                            <h3>Technical Transfer Summary by Server</h3>
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Server</th>
-                                        <th>IB Account Type</th>
-                                        <th>Total Commission</th>
-                                        <th>Transferred</th>
-                                        <th>Not Transferred</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${Object.entries(serverStats)
-                                        .filter(([_, stats]) => stats.ibAccountType === 'technical')
-                                        .map(([server, stats]) => `
-                                            <tr>
-                                                <td>${server}</td>
-                                                <td>${stats.ibAccountType || '-'}</td>
-                                                <td>$${stats.totalCommission.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                                                <td>$${stats.transferred.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                                                <td style="color: ${stats.notTransferred > 0 ? '#ff4444' : '#4CAF50'}">$${stats.notTransferred.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                                            </tr>
-                                        `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="table-wrapper" style="margin-top: 20px;">
-                            <h3>Main Account Summary</h3>
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Server</th>
-                                        <th>IB Account Type</th>
-                                        <th>Total Commission</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${Object.entries(serverStats)
-                                        .filter(([_, stats]) => stats.ibAccountType === 'main')
-                                        .map(([server, stats]) => `
-                                            <tr>
-                                                <td>${server}</td>
-                                                <td>${stats.ibAccountType || '-'}</td>
-                                                <td>$${stats.totalCommission.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                                            </tr>
-                                        `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                        <h3 style="margin-top: 20px;">Results</h3>
-                        <div class="table-wrapper">
-                            <h3>Pending/Failed Summary</h3>
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Deal ID</th>
-                                        <th>Server</th>
-                                        <th>Technical Account</th>
-                                        <th>Technical Date</th>
-                                        <th>Main Account</th>
-                                        <th>Main Date</th>
-                                        <th>Commission</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${filteredData
-                                        .filter(row => {
-                                            // Only show technical entries that haven't been transferred
-                                            if (row.IB_account_type === 'technical') {
-                                                // Check if there's a corresponding IBT to main entry
-                                                const hasTransfer = filteredData.some(r => 
-                                                    r.Commission_Type === 'IBT to main' && 
-                                                    r.MT5_Comment.includes(`deal ${row.Deal_ID}`)
-                                                );
-                                                return !hasTransfer;
-                                            }
-                                            return false;
-                                        })
-                                        .map(row => {
-                                            const today = new Date();
-                                            const yesterday = new Date(today);
-                                            yesterday.setDate(yesterday.getDate() - 1);
-                                            const yesterdayStr = yesterday.toISOString().split('T')[0];
-                                            const status = row.date === yesterdayStr ? 'Pending' : 'Not Transferred';
-                                            const statusColor = status === 'Pending' ? '#ffd700' : '#ff4444';
-                                            
-                                            return `
-                                                <tr>
-                                                    <td>${row.Deal_ID}</td>
-                                                    <td>${row.Server}</td>
-                                                    <td>${row.Affiliate_MT5}</td>
-                                                    <td>${row.date}</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
-                                                    <td>${row.Commission}</td>
-                                                    <td style="color: ${statusColor}">${status}</td>
-                                                </tr>
-                                            `;
-                                        }).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="table-wrapper">
-                        <h3>Fetched Data</h3>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>AFF MT5</th>
-                                    <th>Deal ID</th>
-                                    <th>IB Account Type</th>
-                                    <th>Server</th>
-                                    <th>Commission</th>
-                                    <th>MT5 Comment</th>
-                                    <th>Client MT5</th>
-                                    <th>Commission Type</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${filteredData.map(row => `
-                                    <tr>
-                                        <td>${row.date}</td>
-                                        <td>${row.Affiliate_MT5}</td>
-                                        <td>${row.Deal_ID}</td>
-                                        <td>${row.IB_account_type}</td>
-                                        <td>${row.Server}</td>
-                                        <td>${row.Commission}</td>
-                                        <td>${row.MT5_Comment}</td>
-                                        <td>${extractClientMT5(row.MT5_Comment)}</td>
-                                        <td>${row.Commission_Type}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-
-                // Update the right column with filtered data
-                const rightColumn = document.querySelector('.right-column');
-                rightColumn.innerHTML = tableHTML;
-            } else {
-                alert('No data found for the specified Client MT5');
-            }
+            // Update current filters
+            currentFilters.clientMT5 = clientMT5;
+            
+            // Apply all current filters
+            applyAllFilters();
         }
 
-        // Add this new function to handle client MT5 reset
+        // Modify the resetClientMT5 function
         function resetClientMT5() {
             // Clear the input field
             document.getElementById('clientMT5').value = '';
             
-            // Reset the display to show all data
-            if (window.tableData) {
-                displayDataTable();
-            }
+            // Update current filters
+            currentFilters.clientMT5 = '';
+            
+            // Apply remaining filters
+            applyAllFilters();
         }
 
+        // Modify the applyDateFilter function
         function applyDateFilter() {
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
@@ -1724,59 +1441,90 @@
                 return;
             }
 
-            // First, find all technical entries within the date range and their deal IDs
-            const technicalDealIds = new Set();
-            const technicalEntries = new Map(); // Store technical entries for reference
+            // Update current filters
+            currentFilters.startDate = startDate;
+            currentFilters.endDate = endDate;
+            
+            // Apply all current filters
+            applyAllFilters();
+        }
 
-            window.tableData?.forEach(row => {
-                if (row.IB_account_type === 'technical') {
+        // Modify the resetDateFilter function
+        function resetDateFilter() {
+            // Clear the date inputs
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            
+            // Update current filters
+            currentFilters.startDate = '';
+            currentFilters.endDate = '';
+            
+            // Apply remaining filters
+            applyAllFilters();
+        }
+
+        // Add new function to apply all filters
+        function applyAllFilters() {
+            if (!window.tableData) return;
+
+            let filteredData = [...window.tableData];
+
+            // Apply client MT5 filter if active
+            if (currentFilters.clientMT5) {
+                filteredData = filteredData.filter(row => {
+                    const clientMT5FromComment = extractClientMT5(row.MT5_Comment);
+                    return clientMT5FromComment === currentFilters.clientMT5;
+                });
+            }
+
+            // Apply date filter if active
+            if (currentFilters.startDate && currentFilters.endDate) {
+                const start = new Date(currentFilters.startDate);
+                const end = new Date(currentFilters.endDate);
+
+                // First, find all technical entries within the date range and their deal IDs
+                const technicalDealIds = new Set();
+                filteredData.forEach(row => {
+                    if (row.IB_account_type === 'technical') {
+                        const rowDate = new Date(row.date);
+                        if (rowDate >= start && rowDate <= end) {
+                            technicalDealIds.add(row.Deal_ID);
+                        }
+                    }
+                });
+
+                // Filter the data based on the date range and deal IDs
+                filteredData = filteredData.filter(row => {
                     const rowDate = new Date(row.date);
-                    const start = new Date(startDate);
-                    const end = new Date(endDate);
-                    if (rowDate >= start && rowDate <= end) {
-                        technicalDealIds.add(row.Deal_ID);
-                        technicalEntries.set(row.Deal_ID, row);
+                    
+                    // Case 1: For Technical account type
+                    if (row.IB_account_type === 'technical') {
+                        return rowDate >= start && rowDate <= end;
                     }
-                }
-            });
-
-            // Now filter the data based on the date range and deal IDs
-            const filteredData = window.tableData?.filter(row => {
-                const rowDate = new Date(row.date);
-                const start = new Date(startDate);
-                const end = new Date(endDate);
-                
-                // Case 1: For Technical account type
-                if (row.IB_account_type === 'technical') {
-                    return rowDate >= start && rowDate <= end;
-                }
-                
-                // Case 2: For Main account type and IBT to Main commission type
-                if (row.IB_account_type === 'main' && row.Commission_Type === 'IBT to main') {
-                    // Extract deal ID from MT5 Comment
-                    const dealMatch = row.MT5_Comment.match(/deal (\d+)/);
-                    if (dealMatch && dealMatch[1]) {
-                        const dealId = dealMatch[1];
-                        // Only include if the deal ID matches a technical entry within the date range
-                        return technicalDealIds.has(dealId);
+                    
+                    // Case 2: For Main account type and IBT to Main commission type
+                    if (row.IB_account_type === 'main' && row.Commission_Type === 'IBT to main') {
+                        const dealMatch = row.MT5_Comment.match(/deal (\d+)/);
+                        if (dealMatch && dealMatch[1]) {
+                            return technicalDealIds.has(dealMatch[1]);
+                        }
+                        return false;
                     }
+                    
+                    // Case 3: For IBT to Main commission type
+                    if (row.Commission_Type === 'IBT to main') {
+                        const dealMatch = row.MT5_Comment.match(/deal (\d+)/);
+                        if (dealMatch && dealMatch[1]) {
+                            return technicalDealIds.has(dealMatch[1]);
+                        }
+                    }
+                    
                     return false;
-                }
-                
-                // Case 3: For IBT to Main commission type
-                if (row.Commission_Type === 'IBT to main') {
-                    const dealMatch = row.MT5_Comment.match(/deal (\d+)/);
-                    if (dealMatch && dealMatch[1]) {
-                        const dealId = dealMatch[1];
-                        // Only include if the deal ID matches a technical entry within the date range
-                        return technicalDealIds.has(dealId);
-                    }
-                }
-                
-                return false;
-            });
+                });
+            }
 
-            if (filteredData && filteredData.length > 0) {
+            // Update the display with filtered data
+            if (filteredData.length > 0) {
                 // Get unique AFF Main MT5s from the filtered data
                 const mainAccountMT5s = [...new Set(filteredData
                     .filter(row => row.IB_account_type === 'main')
@@ -1866,7 +1614,7 @@
                                     <h3 style="margin: 0 0 10px 0;">Client MT5</h3>
                                     <div style="display: flex; flex-wrap: wrap; gap: 10px;">
                                         <div style="background: #555; padding: 8px 12px; border-radius: 4px; color: #4CAF50;">
-                                            ${clientMT5}
+                                            ${currentFilters.clientMT5 || '-'}
                                         </div>
                                     </div>
                                 </div>
@@ -2065,18 +1813,7 @@
                 const rightColumn = document.querySelector('.right-column');
                 rightColumn.innerHTML = tableHTML;
             } else {
-                alert('No data found for the specified date range');
-            }
-        }
-
-        function resetDateFilter() {
-            // Clear the date inputs
-            document.getElementById('startDate').value = '';
-            document.getElementById('endDate').value = '';
-            
-            // Reset the display to show all data
-            if (window.tableData) {
-                displayDataTable();
+                alert('No data found for the current filters');
             }
         }
     </script>
