@@ -463,6 +463,35 @@
         .home-button:hover {
             background: #45a049;
         }
+
+        /* Add styles for the client MT5 chip container */
+        .client-mt5-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        /* Add styles for the client MT5 chips */
+        .client-mt5-chip {
+            background: #555;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: #4CAF50;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .client-mt5-chip.selected {
+            background: #4CAF50;
+            color: #fff;
+        }
+
+        .client-mt5-chip:hover {
+            background: #666;
+        }
     </style>
 </head>
 <body>
@@ -487,13 +516,14 @@
                         Uploaded file: <span id="uploadedFileName">No file uploaded</span>
                     </div>
 
-                    <label for="clientMT5" style="margin-top: 15px;">Client MT5</label>
-                    <div class="file-input-group">
-                        <input type="text" id="clientMT5" placeholder="Enter Client MT5 number" style="width: 100%; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #444; color: #fff;">
-                        <button class="search-btn" onclick="searchClientMT5()">Search</button>
-                    </div>
-                    <div style="margin-top: 10px;">
-                        <button class="search-btn" onclick="resetClientMT5()" style="width: 100%;">Clear Client Filter</button>
+                    <div style="margin-top: 15px;">
+                        <h3>Client MT5 Selection</h3>
+                        <div id="clientMT5-multiselect" class="chip-container">
+                            <div style="color: #888;">No client MT5s available</div>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <button class="search-btn" onclick="resetClientMT5()" style="width: 100%;">Clear Client Filter</button>
+                        </div>
                     </div>
 
                     <!-- Add Date Range Filters -->
@@ -847,6 +877,8 @@
                 console.log('Transfer Status:', transferStatus); // Debug log
                 updateSummaryAndTable();
                 displayDataTable();
+                // Update client MT5 chips immediately after loading data
+                updateClientMT5Chips(tableData);
             };
             reader.readAsText(file);
         }
@@ -1013,11 +1045,16 @@
                                 </div>
                             </div>
                             <div style="flex: 1;">
-                                <h3 style="margin: 0 0 10px 0;">Client MT5</h3>
+                                <h3 style="margin: 0 0 10px 0;">Selected Client MT5s</h3>
                                 <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                                    <div style="background: #555; padding: 8px 12px; border-radius: 4px; color: #4CAF50;">
-                                        ${clientMT5}
-                                    </div>
+                                    ${Array.from(currentFilters.selectedClientMT5s).length > 0 
+                                        ? Array.from(currentFilters.selectedClientMT5s).map(mt5 => `
+                                            <div style="background: #555; padding: 8px 12px; border-radius: 4px; color: #4CAF50;">
+                                                ${mt5}
+                                            </div>
+                                        `).join('')
+                                        : '<div style="color: #888;">No client MT5s selected</div>'
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -1281,13 +1318,14 @@
                         Uploaded file: <span id="uploadedFileName">No file uploaded</span>
                     </div>
 
-                    <label for="clientMT5" style="margin-top: 15px;">Client MT5</label>
-                    <div class="file-input-group">
-                        <input type="text" id="clientMT5" placeholder="Enter Client MT5 number" style="width: 100%; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #444; color: #fff;">
-                        <button class="search-btn" onclick="searchClientMT5()">Search</button>
-                    </div>
-                    <div style="margin-top: 10px;">
-                        <button class="search-btn" onclick="resetClientMT5()" style="width: 100%;">Clear Client Filter</button>
+                    <div style="margin-top: 15px;">
+                        <h3>Client MT5 Selection</h3>
+                        <div id="clientMT5-multiselect" class="chip-container">
+                            <div style="color: #888;">No client MT5s available</div>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <button class="search-btn" onclick="resetClientMT5()" style="width: 100%;">Clear Client Filter</button>
+                        </div>
                     </div>
 
                     <!-- Add Date Range Filters -->
@@ -1352,13 +1390,14 @@
                         Uploaded file: <span id="uploadedFileName">No file uploaded</span>
                     </div>
 
-                    <label for="clientMT5" style="margin-top: 15px;">Client MT5</label>
-                    <div class="file-input-group">
-                        <input type="text" id="clientMT5" placeholder="Enter Client MT5 number" style="width: 100%; padding: 8px; border: 1px solid #555; border-radius: 4px; background: #444; color: #fff;">
-                        <button class="search-btn" onclick="searchClientMT5()">Search</button>
-                    </div>
-                    <div style="margin-top: 10px;">
-                        <button class="search-btn" onclick="resetClientMT5()" style="width: 100%;">Clear Client Filter</button>
+                    <div style="margin-top: 15px;">
+                        <h3>Client MT5 Selection</h3>
+                        <div id="clientMT5-multiselect" class="chip-container">
+                            <div style="color: #888;">No client MT5s available</div>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <button class="search-btn" onclick="resetClientMT5()" style="width: 100%;">Clear Client Filter</button>
+                        </div>
                     </div>
 
                     <!-- Add Date Range Filters -->
@@ -1401,7 +1440,8 @@
         let currentFilters = {
             clientMT5: '',
             startDate: '',
-            endDate: ''
+            endDate: '',
+            selectedClientMT5s: new Set()
         };
 
         // Modify the searchClientMT5 function
@@ -1421,13 +1461,10 @@
 
         // Modify the resetClientMT5 function
         function resetClientMT5() {
-            // Clear the input field
-            document.getElementById('clientMT5').value = '';
-            
-            // Update current filters
-            currentFilters.clientMT5 = '';
-            
-            // Apply remaining filters
+            currentFilters.selectedClientMT5s.clear();
+            // Get the current table data and update the chips
+            const tableData = window.tableData || [];
+            updateClientMT5Chips(tableData);
             applyAllFilters();
         }
 
@@ -1468,7 +1505,7 @@
             if (!window.tableData) return;
 
             // If no filters are active, use the original data
-            if (!currentFilters.clientMT5 && !currentFilters.startDate && !currentFilters.endDate) {
+            if (!currentFilters.clientMT5 && !currentFilters.startDate && !currentFilters.endDate && currentFilters.selectedClientMT5s.size === 0) {
                 displayDataTable();
                 return;
             }
@@ -1526,6 +1563,14 @@
                     }
                     
                     return false;
+                });
+            }
+
+            // Apply client MT5 selection filter if active
+            if (currentFilters.selectedClientMT5s.size > 0) {
+                filteredData = filteredData.filter(row => {
+                    const clientMT5FromComment = extractClientMT5(row.MT5_Comment);
+                    return currentFilters.selectedClientMT5s.has(clientMT5FromComment);
                 });
             }
 
@@ -1619,9 +1664,14 @@
                                 <div style="flex: 1;">
                                     <h3 style="margin: 0 0 10px 0;">Client MT5</h3>
                                     <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                                        <div style="background: #555; padding: 8px 12px; border-radius: 4px; color: #4CAF50;">
-                                            ${currentFilters.clientMT5 || '-'}
-                                        </div>
+                                        ${currentFilters.selectedClientMT5s.size > 0 
+                                            ? Array.from(currentFilters.selectedClientMT5s).map(mt5 => `
+                                                <div style="background: #555; padding: 8px 12px; border-radius: 4px; color: #4CAF50;">
+                                                    ${mt5}
+                                                </div>
+                                            `).join('')
+                                            : '<div style="color: #888;">No client MT5s selected</div>'
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -1821,6 +1871,52 @@
             } else {
                 alert('No data found for the current filters');
             }
+        }
+
+        // Add the updateClientMT5Chips function
+        function updateClientMT5Chips(tableData) {
+            const container = document.getElementById('clientMT5-multiselect');
+            if (!container) return;
+
+            // Extract unique client MT5s from the data
+            const uniqueClientMT5s = new Set();
+            tableData.forEach(row => {
+                const clientMT5 = extractClientMT5(row.MT5_Comment);
+                if (clientMT5 !== '-') {
+                    uniqueClientMT5s.add(clientMT5);
+                }
+            });
+
+            // Clear the container
+            container.innerHTML = '';
+
+            if (uniqueClientMT5s.size === 0) {
+                container.innerHTML = '<div style="color: #888;">No client MT5s available</div>';
+                return;
+            }
+
+            // Create chips for each unique client MT5
+            Array.from(uniqueClientMT5s).sort().forEach(mt5 => {
+                const chip = document.createElement('div');
+                chip.className = 'client-mt5-chip';
+                if (currentFilters.selectedClientMT5s.has(mt5)) {
+                    chip.classList.add('selected');
+                }
+                chip.textContent = mt5;
+                chip.onclick = () => toggleClientMT5(mt5);
+                container.appendChild(chip);
+            });
+        }
+
+        // Add the toggleClientMT5 function
+        function toggleClientMT5(mt5) {
+            if (currentFilters.selectedClientMT5s.has(mt5)) {
+                currentFilters.selectedClientMT5s.delete(mt5);
+            } else {
+                currentFilters.selectedClientMT5s.add(mt5);
+            }
+            updateClientMT5Chips(window.tableData || []);
+            applyAllFilters();
         }
     </script>
 </body>
