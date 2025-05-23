@@ -493,7 +493,7 @@
                         <button class="search-btn" onclick="searchClientMT5()">Search</button>
                     </div>
                     <div style="margin-top: 10px;">
-                        <button class="search-btn" onclick="resetClientMT5()" style="width: 100%;">Clear Client Filter</button>
+                        <button class="search-btn" onclick="resetClientMT5()" style="width: 100%; background-color: #ff4444;">Clear Client Filter</button>
                     </div>
 
                     <!-- Add Date Range Filters -->
@@ -510,7 +510,7 @@
                             </div>
                             <div style="display: flex; gap: 10px;">
                                 <button class="search-btn" onclick="applyDateFilter()" style="flex: 1;">Apply Date Filter</button>
-                                <button class="search-btn" onclick="resetDateFilter()" style="flex: 1;">Reset Date Filter</button>
+                                <button class="search-btn" onclick="resetDateFilter()" style="flex: 1; background-color: #ff4444;">Reset Date Filter</button>
                             </div>
                         </div>
                     </div>
@@ -957,10 +957,15 @@
                         totalCommission: 0,
                         transferred: 0,
                         notTransferred: 0,
-                        ibAccountType: row.IB_account_type // Add IB Account Type
+                        ibAccountType: row.IB_account_type
                     };
                 }
-                serverStats[row.Server].totalCommission += parseFloat(row.Commission);
+                // Add commission to total based on account type
+                if (row.IB_account_type === 'main') {
+                    serverStats[row.Server].totalCommission += parseFloat(row.Commission);
+                } else if (row.IB_account_type === 'technical') {
+                    serverStats[row.Server].totalCommission += parseFloat(row.Commission);
+                }
             });
 
             // Create a map of transferred deals
@@ -975,12 +980,11 @@
                 }
             });
 
-            // Update transfer status counts and amounts
+            // Update transfer status counts and amounts for each server
             tableData.forEach(row => {
                 if (row.IB_account_type === 'technical') {
-                    const dealId = row.Deal_ID;
-                    if (transferredDeals.has(dealId)) {
-                        serverStats[row.Server].transferred += transferredDeals.get(dealId);
+                    if (transferredDeals.has(row.Deal_ID)) {
+                        serverStats[row.Server].transferred += transferredDeals.get(row.Deal_ID);
                     } else {
                         serverStats[row.Server].notTransferred += parseFloat(row.Commission);
                     }
@@ -1287,7 +1291,7 @@
                         <button class="search-btn" onclick="searchClientMT5()">Search</button>
                     </div>
                     <div style="margin-top: 10px;">
-                        <button class="search-btn" onclick="resetClientMT5()" style="width: 100%;">Clear Client Filter</button>
+                        <button class="search-btn" onclick="resetClientMT5()" style="width: 100%; background-color: #ff4444;">Clear Client Filter</button>
                     </div>
 
                     <!-- Add Date Range Filters -->
@@ -1304,7 +1308,7 @@
                             </div>
                             <div style="display: flex; gap: 10px;">
                                 <button class="search-btn" onclick="applyDateFilter()" style="flex: 1;">Apply Date Filter</button>
-                                <button class="search-btn" onclick="resetDateFilter()" style="flex: 1;">Reset Date Filter</button>
+                                <button class="search-btn" onclick="resetDateFilter()" style="flex: 1; background-color: #ff4444;">Reset Date Filter</button>
                             </div>
                         </div>
                     </div>
@@ -1358,7 +1362,7 @@
                         <button class="search-btn" onclick="searchClientMT5()">Search</button>
                     </div>
                     <div style="margin-top: 10px;">
-                        <button class="search-btn" onclick="resetClientMT5()" style="width: 100%;">Clear Client Filter</button>
+                        <button class="search-btn" onclick="resetClientMT5()" style="width: 100%; background-color: #ff4444;">Clear Client Filter</button>
                     </div>
 
                     <!-- Add Date Range Filters -->
@@ -1375,7 +1379,7 @@
                             </div>
                             <div style="display: flex; gap: 10px;">
                                 <button class="search-btn" onclick="applyDateFilter()" style="flex: 1;">Apply Date Filter</button>
-                                <button class="search-btn" onclick="resetDateFilter()" style="flex: 1;">Reset Date Filter</button>
+                                <button class="search-btn" onclick="resetDateFilter()" style="flex: 1; background-color: #ff4444;">Reset Date Filter</button>
                             </div>
                         </div>
                     </div>
@@ -1508,13 +1512,9 @@
                         return rowDate >= start && rowDate <= end;
                     }
                     
-                    // Case 2: For Main account type and IBT to Main commission type
-                    if (row.IB_account_type === 'main' && row.Commission_Type === 'IBT to main') {
-                        const dealMatch = row.MT5_Comment.match(/deal (\d+)/);
-                        if (dealMatch && dealMatch[1]) {
-                            return technicalDealIds.has(dealMatch[1]);
-                        }
-                        return false;
+                    // Case 2: For Main account type - include all main account entries within date range
+                    if (row.IB_account_type === 'main') {
+                        return rowDate >= start && rowDate <= end;
                     }
                     
                     // Case 3: For IBT to Main commission type
@@ -1571,7 +1571,7 @@
                     })
                     .reduce((sum, row) => sum + parseFloat(row.Commission), 0);
 
-                // Calculate server-wise statistics
+                // Calculate server-wise statistics for filtered data
                 const serverStats = {};
                 
                 // First, initialize stats for all servers from filtered data
@@ -1584,7 +1584,12 @@
                             ibAccountType: row.IB_account_type
                         };
                     }
-                    serverStats[row.Server].totalCommission += parseFloat(row.Commission);
+                    // Add commission to total based on account type
+                    if (row.IB_account_type === 'main') {
+                        serverStats[row.Server].totalCommission += parseFloat(row.Commission);
+                    } else if (row.IB_account_type === 'technical') {
+                        serverStats[row.Server].totalCommission += parseFloat(row.Commission);
+                    }
                 });
 
                 // Update transfer status counts and amounts for each server
