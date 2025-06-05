@@ -1405,7 +1405,8 @@
         let currentFilters = {
             clientMT5: '',
             startDate: '',
-            endDate: ''
+            endDate: '',
+            selectedClientMT5s: new Set()
         };
 
         // Modify the searchClientMT5 function
@@ -1417,7 +1418,7 @@
             }
             
             // Update current filters
-            currentFilters.clientMT5 = clientMT5;
+            currentFilters.selectedClientMT5s.add(clientMT5);
             
             // Apply all current filters
             applyAllFilters();
@@ -1429,7 +1430,7 @@
             document.getElementById('clientMT5').value = '';
             
             // Update current filters
-            currentFilters.clientMT5 = '';
+            currentFilters.selectedClientMT5s.clear();
             
             // Apply remaining filters
             applyAllFilters();
@@ -1472,7 +1473,7 @@
             if (!window.tableData) return;
 
             // If no filters are active, use the original data
-            if (!currentFilters.clientMT5 && !currentFilters.startDate && !currentFilters.endDate) {
+            if (!currentFilters.clientMT5 && !currentFilters.startDate && !currentFilters.endDate && currentFilters.selectedClientMT5s.size === 0) {
                 displayDataTable();
                 return;
             }
@@ -1512,9 +1513,13 @@
                         return rowDate >= start && rowDate <= end;
                     }
                     
-                    // Case 2: For Main account type - include all main account entries within date range
-                    if (row.IB_account_type === 'main') {
-                        return rowDate >= start && rowDate <= end;
+                    // Case 2: For Main account type and IBT to Main commission type
+                    if (row.IB_account_type === 'main' && row.Commission_Type === 'IBT to main') {
+                        const dealMatch = row.MT5_Comment.match(/deal (\d+)/);
+                        if (dealMatch && dealMatch[1]) {
+                            return technicalDealIds.has(dealMatch[1]);
+                        }
+                        return false;
                     }
                     
                     // Case 3: For IBT to Main commission type
@@ -1526,6 +1531,14 @@
                     }
                     
                     return false;
+                });
+            }
+
+            // Apply client MT5 selection filter if active
+            if (currentFilters.selectedClientMT5s.size > 0) {
+                filteredData = filteredData.filter(row => {
+                    const clientMT5FromComment = extractClientMT5(row.MT5_Comment);
+                    return currentFilters.selectedClientMT5s.has(clientMT5FromComment);
                 });
             }
 
@@ -1571,7 +1584,7 @@
                     })
                     .reduce((sum, row) => sum + parseFloat(row.Commission), 0);
 
-                // Calculate server-wise statistics for filtered data
+                // Calculate server-wise statistics
                 const serverStats = {};
                 
                 // First, initialize stats for all servers from filtered data
@@ -1584,12 +1597,7 @@
                             ibAccountType: row.IB_account_type
                         };
                     }
-                    // Add commission to total based on account type
-                    if (row.IB_account_type === 'main') {
-                        serverStats[row.Server].totalCommission += parseFloat(row.Commission);
-                    } else if (row.IB_account_type === 'technical') {
-                        serverStats[row.Server].totalCommission += parseFloat(row.Commission);
-                    }
+                    serverStats[row.Server].totalCommission += parseFloat(row.Commission);
                 });
 
                 // Update transfer status counts and amounts for each server
@@ -1622,11 +1630,16 @@
                                     </div>
                                 </div>
                                 <div style="flex: 1;">
-                                    <h3 style="margin: 0 0 10px 0;">Client MT5</h3>
+                                    <h3 style="margin: 0 0 10px 0;">Selected Client MT5s</h3>
                                     <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                                        <div style="background: #555; padding: 8px 12px; border-radius: 4px; color: #4CAF50;">
-                                            ${currentFilters.clientMT5 || '-'}
-                                        </div>
+                                        ${Array.from(currentFilters.selectedClientMT5s).length > 0 
+                                            ? Array.from(currentFilters.selectedClientMT5s).map(mt5 => `
+                                                <div style="background: #555; padding: 8px 12px; border-radius: 4px; color: #4CAF50;">
+                                                    ${mt5}
+                                                </div>
+                                            `).join('')
+                                            : '<div style="color: #888;">No client MT5s selected</div>'
+                                        }
                                     </div>
                                 </div>
                             </div>
